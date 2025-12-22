@@ -1,0 +1,63 @@
+# ==========================================
+# 1. Python (FastAPI / Backend)
+# ==========================================
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+python/
+
+# Python rác & Cache
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Database (SQLite)
+*.db
+*.sqlite3
+
+# ==========================================
+# 2. JavaScript / TypeScript (Next.js / Frontend)
+# ==========================================
+# Thư viện
+node_modules/
+
+# Next.js Build & Cache
+.next/
+out/
+build/
+.vercel/
+.turbo/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================
+# 3. Security (Bảo mật - QUAN TRỌNG)
+# ==========================================
+# Loại bỏ tất cả các file env ở mọi nơi trong project
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# 4. System / IDE (Hệ thống & Công cụ)
+# ==========================================
+# Windows / Mac
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
