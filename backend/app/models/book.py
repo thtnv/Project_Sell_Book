@@ -19,6 +19,7 @@ class Book(Base):
 
     __table_args__ = (
         CheckConstraint('price >= 0', name='check_price_pos'),
+        CheckConstraint('stock >= 0', name='check_stock_pos'),
     )
 
     category = relationship("Category", back_populates="books")
