@@ -1,21 +1,18 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, UniqueConstraint,CheckConstraint
 from datetime import datetime
 from .base import Base
-
+from sqlalchemy.orm import relationship
 class DiscountCode(Base):
-    __tablename__ = "discountcodes"
+    __tablename__ = "discounts"
     
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    vouchercode = Column(String(20), unique=True, nullable=False)
-    discountpercent = Column(Numeric(5, 2))
-    expirydate = Column(DateTime, nullable=False)
-    createdat = Column(DateTime, default=datetime.utcnow)
-
-class DiscountApplication(Base):
-    __tablename__ = "discountapplications"
+    discount_id = Column(String(10), primary_key=True)
+    voucher_code = Column(String(20), unique=True, nullable=False)
+    discount_percentage = Column(Numeric(5, 2))
+    expiry_date = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
     
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    orderid = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"))
-    discountcodeid = Column(Integer, ForeignKey("discountcodes.id", ondelete="CASCADE"))
+    __table_args__ = (
+        CheckConstraint('discount_percentage BETWEEN 1 AND 100', name='check_percentage'),
+    )
     
-    __table_args__ = (UniqueConstraint('orderid', 'discountcodeid', name='_order_discount_uc'),)
+    discount_applications = relationship("DiscountApplication", back_populates="discount")

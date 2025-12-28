@@ -4,11 +4,12 @@ from datetime import datetime
 from .base import Base
 
 class PaymentMethod(Base):
-    __tablename__ = "paymentmethods"
+    __tablename__ = "payment_methods"
     
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    methodname = Column(String(50), nullable=False, unique=True)
+    payment_method_id = Column(String(10), primary_key=True)
+    method_name = Column(String(100), unique=True, nullable=False)
     description = Column(Text)
-    createdat = Column(DateTime, default=datetime.now)
+    status = Column(String(20), default='active')
+    created_at = Column(DateTime, default=datetime.utcnow)
     
     orders = relationship("Order", back_populates="payment_method")

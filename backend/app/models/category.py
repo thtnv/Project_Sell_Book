@@ -4,7 +4,8 @@ from .base import Base
 
 class Category(Base):
     __tablename__ = "categories"
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    categoryname = Column(String(50), unique=True, nullable=False,unique=True)
-
+    
+    category_id = Column(String(10), primary_key=True)
+    category_name = Column(String(50), unique=True, nullable=False)
+    
     books = relationship("Book", back_populates="category")

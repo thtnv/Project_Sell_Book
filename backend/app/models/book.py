@@ -5,22 +5,27 @@ from .base import Base
 
 class Book(Base):
     __tablename__ = "books"
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    
+    book_id = Column(String(10), primary_key=True)
     title = Column(String(200), nullable=False)
     author = Column(String(100), nullable=False)
     publisher = Column(String(100))
-    publishyear = Column(Integer)
-    categoryid = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"))
+    publication_year = Column(Integer)
+    category_id = Column(String(10), ForeignKey("categories.category_id", ondelete="CASCADE"))
     price = Column(Numeric(10, 2), nullable=False)
-    stock = Column(Integer, default=0)
+    stock_quantity = Column(Integer, default=0)
+    sold_quantity = Column(Integer, default=0)
     description = Column(Text)
-    imageurl = Column(String(255))
-    createdat = Column(DateTime, default=datetime.utcnow)
-
+    cover_image_url = Column(String(255))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
     __table_args__ = (
-        CheckConstraint('price >= 0', name='check_price_pos'),
-        CheckConstraint('stock >= 0', name='check_stock_pos'),
+        CheckConstraint('price >= 0', name='check_price'),
+        CheckConstraint('stock_quantity >= 0', name='check_stock'),
+        CheckConstraint('sold_quantity >= 0', name='check_sold'),
     )
-
+    
     category = relationship("Category", back_populates="books")
-    orderitems = relationship("OrderDetail", back_populates="book")
+    order_details = relationship("OrderDetail", back_populates="book")
+    reviews = relationship("Review", back_populates="book")
+    favorites = relationship("Favorite", back_populates="book")
