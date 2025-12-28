@@ -12,7 +12,7 @@ class User(Base):
     phone = Column(String(15))
     address = Column(String(255))
     role = Column(String(20), default="customer")
-    createdat = Column(DateTime, default=datetime.utcnow)
+    createdat = Column(DateTime, default=datetime.now)
 
     orders = relationship("Order", back_populates="user")
     cartitems = relationship("Cart", back_populates="user")
