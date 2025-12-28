@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from .config import settings
 from app.models.base import Base
 # Đảm bảo các model đã được import để Base nhận diện
-from app.models import User, Book, Category, Cart, Order, OrderDetail 
+from app.models import User, Book, Category, Cart, Order, OrderDetail, PaymentMethod, Review, DiscountCode, DiscountApplication, Contact
 
 # Tạo Engine kết nối cho MySQL
 engine = create_engine(settings.DATABASE_URL)
