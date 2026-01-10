@@ -222,7 +222,29 @@ async def cancel_order(
         "order_status": order.status.status_name if order.status else "unknown"
     }
 
-
+@router.put("/{order_id}/confirm-delivery")
+async def confirm_delivery_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """User xác nhận đã nhận hàng - Chuyển từ 'shipping' -> 'completed'"""
+    try:
+        # Gọi hàm confirm_delivery từ service
+        order = order_service.confirm_delivery(db, order_id, current_user.user_id)
+        
+        return {
+            "message": "Xác nhận nhận hàng thành công",
+            "order_id": order.order_id,
+            "order_status": order.status.status_name if order.status else "unknown"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 # Admin endpoints
 @router.get("/admin/all")
 async def get_all_orders_admin(
