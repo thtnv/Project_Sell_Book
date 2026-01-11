@@ -9,11 +9,13 @@ import {StatItem} from '@/components/home/Stats'
 import {data} from '@/data/data'
 import { useEffect, useState } from "react";
 import { fetchBookList, BookList, BookFilter } from "@/api/book";
+import Link from 'next/link';
 
 export default function HomePage() {
   const [books, setBooks] = useState<BookList[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<BookFilter>("Tất cả");
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Load books based on filter
   const loadBooks = async (filter: BookFilter) => {
@@ -31,6 +33,12 @@ export default function HomePage() {
   // Initial load
   useEffect(() => {
     loadBooks(activeFilter);
+    const shouldShowAlert = localStorage.getItem('showProfileAlert');
+    if (shouldShowAlert === 'true') {
+      setShowProfileModal(true);
+      // Xóa cờ để không hiện lại lần sau (hoặc giữ lại nếu muốn nhắc mỗi lần vào Home)
+      localStorage.removeItem('showProfileAlert');
+    }
   }, [activeFilter]);
 
   // Handle filter change
@@ -126,6 +134,38 @@ export default function HomePage() {
          </div>
       </section>
       <Footer/>
+      {/* --- MODAL NHẮC NHỞ CẬP NHẬT --- */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-user-edit text-2xl"></i>
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Cập nhật thông tin</h3>
+              <p className="text-slate-600 mb-6 text-sm">
+                Chào mừng bạn! <br/>
+                Để thuận tiện cho việc mua hàng và giao nhận, vui lòng cập nhật đầy đủ <b>Số điện thoại</b> và <b>Địa chỉ</b>.
+              </p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowProfileModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200 transition-all text-sm"
+                >
+                  Để sau
+                </button>
+                <Link 
+                  href="/account" 
+                  className="flex-1 py-2.5 rounded-xl bg-[#0F9D58] text-white font-bold hover:bg-[#0B8043] shadow-lg shadow-green-200 transition-all text-sm flex items-center justify-center"
+                >
+                  Cập nhật ngay
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

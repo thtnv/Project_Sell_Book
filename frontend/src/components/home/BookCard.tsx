@@ -20,12 +20,12 @@ const BookCard = ({ id, title, price, image, stock_quantity }: BookProps) => {
   const { addToCart, isInCart } = useCart();
 
   const getImagePath = (imageName: string | null) => {
-    if (!imageName) return "/books/default-book.png";
+    if (!imageName) return "/books/book_default.jpg";
     if (imageName.startsWith("http")) return imageName;
     return `/books/${imageName}`;
   };
 
-  const imageSrc = imgError ? "/books/default-book.png" : getImagePath(image);
+  const imageSrc = imgError ? "/books/book_default.jpg" : getImagePath(image);
   const inCart = isInCart(id);
 
   const handleAddToCart = (e: React.MouseEvent) => {

@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
+
 class RegisterUserSchema(BaseModel):
     username: str
     phone: Optional[str] = None
@@ -30,8 +31,14 @@ class LoginSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SocialLoginRequest(BaseModel):
+    provider: str  # 'google' hoặc 'facebook'
+    token: str  # Token nhận được từ frontend
+
+
 class UserInfoSchema(BaseModel):
     """Thông tin user trong response login"""
+
     id: str
     fullname: str
     email: EmailStr
@@ -45,6 +52,7 @@ class UserInfoSchema(BaseModel):
 
 class TokenSchema(BaseModel):
     """Schema response khi đăng nhập thành công"""
+
     access_token: str
     token_type: str = "bearer"
     user: dict  # Thông tin user
@@ -66,8 +74,9 @@ class UserProfileSchema(BaseModel):
 
 class UpdateProfileSchema(BaseModel):
     """Schema để cập nhật profile"""
+
     full_name: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
-    
+
     model_config = ConfigDict(from_attributes=True)

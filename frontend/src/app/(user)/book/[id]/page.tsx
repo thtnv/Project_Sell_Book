@@ -33,14 +33,14 @@ import {
 import { createOrder, OrderCreate } from "@/api/order";
 
 const getImageUrl = (image: string | null) => {
-  if (!image) return "/books/default-book.png";
+  if (!image) return "/books/book-default.jpg";
   if (image.startsWith("http")) return image;
   return `/books/${image}`;
 };
 
 const RelatedBookCard = ({ book }: { book: BookList }) => {
   const [relatedImgError, setRelatedImgError] = useState(false);
-  const relatedImgSrc = relatedImgError ? "/books/default-book.png" : getImageUrl(book.cover_image_url);
+  const relatedImgSrc = relatedImgError ? "/books/book-default.jpg" : getImageUrl(book.cover_image_url);
   
   return (
     <Link href={`/book/${book.book_id}`}>
@@ -221,7 +221,7 @@ const BookDetailPage = () => {
     );
   }
 
-  const imageSrc = imgError ? "/books/default-book.png" : getImageUrl(book.cover_image_url);
+  const imageSrc = imgError ? "/books/book-default.jpg" : getImageUrl(book.cover_image_url);
   const totalPrice = Number(book.price) * quantity;
 
   return (

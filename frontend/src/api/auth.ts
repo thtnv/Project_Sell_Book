@@ -148,3 +148,23 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
   return response;
 }
+
+// Social login function (Google, Facebook)
+export interface SocialLoginData {
+  provider: 'google' | 'facebook';
+  token: string; // Chỉ cần gửi token
+}
+
+export async function loginSocial(data: SocialLoginData): Promise<LoginResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/users/login/social`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Lỗi đăng nhập mạng xã hội');
+  }
+  return response.json();
+}

@@ -26,7 +26,7 @@ import { getMyOrders, cancelOrder, confirmDelivery, OrderResponse } from "@/api/
 import { updateProfile, ProfileUpdateData } from "@/api/profile";
 
 export default function UserProfilePage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isLoading } = useAuth();
   const [activeModal, setActiveModal] = useState<"detail" | "cancel" | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,6 +59,8 @@ export default function UserProfilePage() {
 
   // Load orders function
   const loadOrders = useCallback(async () => {
+    // 1. QUAN TRỌNG: Nếu chưa có user hoặc đang load auth thì không gọi API
+    if (isLoading || !user) return;
     try {
       setOrdersLoading(true);
       setError("");
@@ -74,12 +76,34 @@ export default function UserProfilePage() {
     } finally {
       setOrdersLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, user, isLoading]);
 
+  
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
 
+  // 2. Hiển thị Loading State toàn trang nếu Auth đang load
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f0fdf4]">
+        <Loader2 className="animate-spin text-emerald-600" size={48} />
+      </div>
+    );
+  }
+
+  // 3. Nếu không có user (sau khi load xong), chuyển hướng hoặc hiện thông báo
+  if (!user) {
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0fdf4] gap-4">
+            <p className="text-slate-600 font-bold">Vui lòng đăng nhập để xem hồ sơ</p>
+            <Link href="/login" className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold">
+                Đăng nhập ngay
+            </Link>
+        </div>
+    )
+  }
+  
   const handleUpdateInfo = async () => {
     setLoading(true);
     setError("");
@@ -89,17 +113,17 @@ export default function UserProfilePage() {
       const updateData: ProfileUpdateData = {};
       
       const normalizeValue = (val: string | null | undefined) => val?.trim() || "";
-      
+
       if (normalizeValue(userForm.hoTen) !== normalizeValue(user?.fullname)) {
         updateData.full_name = userForm.hoTen.trim();
       }
       
       if (normalizeValue(userForm.soDienThoai) !== normalizeValue(user?.phone)) {
-        updateData.phone = userForm.soDienThoai.trim() || undefined;
+        updateData.phone = userForm.soDienThoai.trim();
       }
       
       if (normalizeValue(userForm.diaChi) !== normalizeValue(user?.address)) {
-        updateData.address = userForm.diaChi.trim() || undefined;
+        updateData.address = userForm.diaChi.trim();
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -257,14 +281,24 @@ export default function UserProfilePage() {
                 <InputGroup label="Họ tên" value={userForm.hoTen} onChange={(v) => setUserForm({...userForm, hoTen: v})} />
                 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Email (không thể sửa)</label>
-                  <input 
-                    type="text" 
-                    value={userForm.email}
-                    readOnly
-                    className="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
-                  />
-                </div>
+                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Email (không thể sửa)</label>
+                    <div className="relative">
+                        <input 
+                          type="text" 
+                          value={userForm.email}
+                          readOnly
+                          className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
+                        />
+                        {/* Hiển thị icon Google/FB nếu là tài khoản social (Optional) */}
+                        {/* Logic này có thể check dựa trên provider nếu backend trả về, hoặc đơn giản để vậy */}
+                    </div>
+                    {/* Gợi ý cho user social */}
+                    {(!user?.phone || !user?.address) && (
+                        <p className="text-xs text-amber-600 italic ml-1 mt-1">
+                            * Bạn đang đăng nhập bằng mạng xã hội. Vui lòng cập nhật SĐT và Địa chỉ để mua hàng.
+                        </p>
+                    )}
+                  </div>
 
                 <InputGroup label="Số điện thoại" value={userForm.soDienThoai} onChange={(v) => setUserForm({...userForm, soDienThoai: v})} />
                 <InputGroup label="Địa chỉ" value={userForm.diaChi} onChange={(v) => setUserForm({...userForm, diaChi: v})} />
