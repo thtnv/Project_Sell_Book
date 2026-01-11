@@ -7,7 +7,11 @@ venv/
 env/
 ENV/
 python/
+<<<<<<< HEAD
 
+=======
+.env/
+>>>>>>> feature/final
 # Python rác & Cache
 **/__pycache__/
 *.py[cod]

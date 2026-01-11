@@ -3,10 +3,11 @@ from .user import User
 from .category import Category
 from .book import Book
 from .payment_method import PaymentMethod
+from .order_status import OrderStatus
 from .order import Order
 from .order_detail import OrderDetail
 from .review import Review
 from .favorite import Favorite
-from .discount import DiscountCode
+from .discount import Discount
 from .discount_application import DiscountApplication
 from .contact import Contact
