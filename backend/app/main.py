@@ -8,15 +8,17 @@ from app.routers.book import router as book_router
 from app.routers.book_admin import router as book_admin_router
 from app.routers.category import router as category_router
 from app.routers.contact import router as contact_router  # ← THÊM DÒNG NÀY
-from app.routers.user_admin  import router as user_admin_router  # ← THÊM DÒNG NÀY
+from app.routers.user_admin import router as user_admin_router  # ← THÊM DÒNG NÀY
 from app.routers.order import router as order_router
 from app.routers.review import router as review_router
 from app.routers.dashboard import router as dashboard_router
+from app.routers.chat import router as chat_router
+from app.routers.payment import router as payment_router
 
 app = FastAPI(
     title="Book Shop API",
     description="API cho hệ thống quản lý nhà sách UTE",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS Configuration
@@ -31,12 +33,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def on_startup():
     init_db()
     print("✅ Database tables created successfully!")
     print("🚀 Server is running on http://127.0.0.1:8000")
     print("📚 API Docs: http://127.0.0.1:8000/docs")
+
 
 # Include routers
 app.include_router(user_router, prefix="/api")
@@ -48,13 +52,18 @@ app.include_router(user_admin_router, prefix="/api")  # ← THÊM DÒNG NÀY
 app.include_router(order_router, prefix="/api")
 app.include_router(review_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(payment_router, prefix="/api")
+
+
 @app.get("/", tags=["Root"])
 def root():
     return {
-        "message": "Book Shop API is running!", 
+        "message": "Book Shop API is running!",
         "status": "success",
-        "docs": "/docs"
+        "docs": "/docs",
     }
+
 
 @app.get("/test-db", tags=["Health"])
 def test_db(db: Session = Depends(get_db)):
@@ -65,11 +74,8 @@ def test_db(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/health", tags=["Health"])
 def health_check():
     """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "Book Shop API",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "Book Shop API", "version": "1.0.0"}

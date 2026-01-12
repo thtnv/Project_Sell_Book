@@ -8,6 +8,7 @@ import { loginUser, loginSocial, LoginData } from '@/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google'; // Import Google Hook
 import FacebookLogin from '@greatsumini/react-facebook-login'; // Import Facebook Component
+import { RegisterResponse } from '@/api/user';
 
 const LoginPage = () => {
   const router = useRouter();
@@ -31,7 +32,7 @@ const LoginPage = () => {
   };
 
     // Hàm kiểm tra và đặt cờ thông báo
-  const checkAndSetProfileAlert = (user: any) => {
+  const checkAndSetProfileAlert = (user: RegisterResponse) => {
       // Nếu thiếu SĐT hoặc Địa chỉ -> Cần nhắc nhở
       if (!user.phone || !user.address || user.phone.trim() === "" || user.address.trim() === "") {
           localStorage.setItem('showProfileAlert', 'true');

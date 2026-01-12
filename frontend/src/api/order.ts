@@ -38,6 +38,8 @@ export interface OrderResponse {
   payment_method_name: string | null;
   created_at: string;
   order_details: OrderDetailResponse[];
+  payment_url?: string; //nưếu thanh toán qua Stripe thì có trường này
+  is_stripe?: boolean; 
 }
 
 export interface UserOrderHistoryResponse {
@@ -103,6 +105,13 @@ export async function createOrder(orderData: OrderCreate): Promise<OrderResponse
           ? responseData.detail 
           : 'Tạo đơn hàng thất bại'
       );
+    }
+
+    // Nếu là thanh toán Stripe, tự động chuyển hướng
+    if (responseData.is_stripe && responseData.payment_url) {
+        window.location.href = responseData.payment_url; // Auto-redirect to Stripe
+        // We return a pending state essentially, as the page will redirect
+        return responseData as OrderResponse; 
     }
 
     return responseData as OrderResponse;

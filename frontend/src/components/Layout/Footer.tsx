@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import ChatWidget from './ChatWidget';
 
 const Footer = () => {
   return (
@@ -72,6 +73,9 @@ const Footer = () => {
           <i className="fa fa-arrow-up"></i>
         </button>
       </div>
+
+      {/* Chat Widget Component */}
+      <ChatWidget />
     </footer>
   );
 };

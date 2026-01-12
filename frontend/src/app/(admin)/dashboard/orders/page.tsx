@@ -76,7 +76,8 @@ export default function OrderManagementPage() {
       cancelled: "Đã hủy"
     };
     return (
-      <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${styles[status] || 'bg-gray-500/20 text-gray-400'}`}>
+      // [FIX 1]: Thêm whitespace-nowrap để chữ không bị xuống dòng
+      <span className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap inline-block ${styles[status] || 'bg-gray-500/20 text-gray-400'}`}>
         {labels[status] || status}
       </span>
     );
@@ -90,9 +91,10 @@ export default function OrderManagementPage() {
       return (
         <button 
           onClick={() => handleUpdateStatus(order_id, 'confirmed', 'Xác nhận')}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all shadow-md"
+          // [FIX 1]: Thêm whitespace-nowrap
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-all shadow-md text-xs font-bold whitespace-nowrap"
         >
-          <Check size={16} /> Xác nhận đơn
+          <Check size={14} /> Xác nhận
         </button>
       );
     }
@@ -102,20 +104,20 @@ export default function OrderManagementPage() {
       return (
         <button 
           onClick={() => handleUpdateStatus(order_id, 'shipping', 'Giao hàng')}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all shadow-md"
+          // [FIX 1]: Thêm whitespace-nowrap
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-all shadow-md text-xs font-bold whitespace-nowrap"
         >
-          <Truck size={16} /> Giao hàng
+          <Truck size={14} /> Giao hàng
         </button>
       );
     }
 
-    // Đang giao, Đã giao, Đã hủy -> Không có nút
-    return <span className="text-gray-500 text-sm italic">Không có hành động</span>;
+    return <span className="text-gray-500 text-xs italic whitespace-nowrap">--</span>;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-[#1A202C]">
         <Loader2 className="animate-spin text-[#4FD1C5]" size={48} />
       </div>
     );
@@ -171,9 +173,11 @@ export default function OrderManagementPage() {
       )}
 
       {/* Table Section */}
-      <div className="overflow-hidden bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-center">
+      <div className="bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl w-full">
+        {/* [FIX 2]: Container này tạo thanh cuộn ngang khi bảng quá rộng */}
+        <div className="overflow-x-auto w-full pb-2">
+          {/* [FIX 3]: min-w-full đảm bảo bảng luôn rộng ít nhất 100%, whitespace-nowrap chặn xuống dòng toàn bộ bảng */}
+          <table className="w-full text-sm text-center whitespace-nowrap">
             <thead className="bg-[#1A202C] text-[#4FD1C5]">
               <tr>
                 <th className="px-6 py-5 font-bold uppercase tracking-wider">STT</th>
@@ -191,15 +195,15 @@ export default function OrderManagementPage() {
                   <tr key={order.order_id} className="hover:bg-[#344054] transition-colors group">
                     <td className="px-6 py-4">{idx + 1}</td>
                     <td className="px-6 py-4 font-black text-[#4FD1C5]">{order.order_id}</td>
-                    <td className="px-6 py-4 font-medium">{order.user_name}</td>
+                    <td className="px-6 py-4 font-medium text-left">{order.user_name}</td>
                     <td className="px-6 py-4 text-[#A0AEC0]">{new Date(order.created_at).toLocaleString('vi-VN')}</td>
-                    <td className="px-6 py-4 font-bold">{order.total_amount.toLocaleString('vi-VN')}₫</td>
+                    <td className="px-6 py-4 font-bold text-emerald-400">{order.total_amount.toLocaleString('vi-VN')}₫</td>
                     <td className="px-6 py-4">{getStatusBadge(order.order_status)}</td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center items-center gap-3">
                         <Link 
                           href={`/dashboard/orders/${order.order_id}`} 
-                          className="bg-blue-600 p-2 rounded-lg hover:bg-blue-700 transition-all shadow-lg" 
+                          className="bg-blue-500/20 text-blue-400 p-2 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-lg" 
                           title="Chi tiết"
                         >
                           <Eye size={16} />

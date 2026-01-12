@@ -80,3 +80,7 @@ class UpdateProfileSchema(BaseModel):
     address: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChangePasswordSchema(BaseModel):
+    password: str = Field(..., min_length=6)

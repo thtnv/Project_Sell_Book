@@ -70,3 +70,21 @@ export async function updateProfile(data: ProfileUpdateData): Promise<UserProfil
   console.log("✅ Update success:", result);
   return result;
 }
+
+/**
+ * Đổi mật khẩu
+ */
+export async function updatePassword(password: string): Promise<unknown> {
+  const response = await fetch(`${API_BASE_URL}/api/users/me/password`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Đổi mật khẩu thất bại');
+  }
+
+  return response.json();
+}

@@ -19,11 +19,13 @@ import {
   CreditCard,
   MapPin,
   CheckCircle,
-  Check
+  Check,
+  Lock,
+  EyeOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyOrders, cancelOrder, confirmDelivery, OrderResponse } from "@/api/order";
-import { updateProfile, ProfileUpdateData } from "@/api/profile";
+import { updateProfile, updatePassword, ProfileUpdateData } from "@/api/profile";
 
 export default function UserProfilePage() {
   const { user, refreshUser, isLoading } = useAuth();
@@ -36,6 +38,15 @@ export default function UserProfilePage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  // State cho đổi mật khẩu
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  // State ẩn/hiện mật khẩu
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // User info form
   const [userForm, setUserForm] = useState({
@@ -104,7 +115,7 @@ export default function UserProfilePage() {
     )
   }
   
-  const handleUpdateInfo = async () => {
+   const handleUpdateInfo = async () => {
     setLoading(true);
     setError("");
     setUpdateSuccess(false);
@@ -113,17 +124,17 @@ export default function UserProfilePage() {
       const updateData: ProfileUpdateData = {};
       
       const normalizeValue = (val: string | null | undefined) => val?.trim() || "";
-
+      
       if (normalizeValue(userForm.hoTen) !== normalizeValue(user?.fullname)) {
         updateData.full_name = userForm.hoTen.trim();
       }
       
       if (normalizeValue(userForm.soDienThoai) !== normalizeValue(user?.phone)) {
-        updateData.phone = userForm.soDienThoai.trim();
+        updateData.phone = userForm.soDienThoai.trim() || undefined;
       }
       
       if (normalizeValue(userForm.diaChi) !== normalizeValue(user?.address)) {
-        updateData.address = userForm.diaChi.trim();
+        updateData.address = userForm.diaChi.trim() || undefined;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -171,6 +182,33 @@ export default function UserProfilePage() {
       loadOrders();
     } catch (error) {
       alert(error instanceof Error ? error.message : "Xác nhận thất bại");
+    }
+  };
+  // --- HÀM XỬ LÝ ĐỔI MẬT KHẨU ---
+  const handleChangePassword = async () => {
+    setPasswordError("");
+    
+    if (newPassword.length < 6) {
+      setPasswordError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await updatePassword(newPassword);
+      alert("Đổi mật khẩu thành công!");
+      setShowPasswordModal(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: unknown) {
+      setPasswordError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại");
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -310,6 +348,15 @@ export default function UserProfilePage() {
                 >
                   {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                   Lưu thay đổi
+                </button>
+
+                {/* --- NÚT ĐỔI MẬT KHẨU MỚI --- */}
+                <button 
+                  onClick={() => setShowPasswordModal(true)}
+                  className="w-full bg-white border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 mt-2"
+                >
+                  <Lock size={18} />
+                  Đổi mật khẩu
                 </button>
               </div>
             </div>
@@ -473,6 +520,70 @@ export default function UserProfilePage() {
                 Hủy đơn
               </button>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* --- MODAL ĐỔI MẬT KHẨU MỚI --- */}
+      {showPasswordModal && (
+        <Modal title="Đổi mật khẩu" onClose={() => setShowPasswordModal(false)}>
+          <div className="space-y-4 pt-2">
+            {passwordError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {passwordError}
+              </div>
+            )}
+            
+            {/* Input Mật khẩu mới */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Mật khẩu mới</label>
+              <div className="relative">
+                <input 
+                  type={showNewPassword ? "text" : "password"} 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:bg-white focus:border-emerald-500 transition-all pr-10"
+                  placeholder="Nhập mật khẩu mới"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
+                >
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Input Xác nhận mật khẩu */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Xác nhận mật khẩu</label>
+              <div className="relative">
+                <input 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  value={confirmPassword} 
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:bg-white focus:border-emerald-500 transition-all pr-10"
+                  placeholder="Nhập lại mật khẩu"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleChangePassword}
+              disabled={passwordLoading}
+              className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+            >
+              {passwordLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              Lưu mật khẩu
+            </button>
           </div>
         </Modal>
       )}

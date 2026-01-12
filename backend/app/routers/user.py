@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from datetime import datetime
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.database import get_db
@@ -10,6 +10,7 @@ from app.schemas.user import (
     RegisterUserSchema,
     RegisterResponseSchema,
     LoginSchema,
+    ChangePasswordSchema,
     TokenSchema,
 )
 from app.schemas.user_profile import UserProfileUpdate, UserProfileResponse
@@ -22,6 +23,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+def generate_user_id(db: Session):
+    stmt = select(User.user_id).order_by(desc(User.user_id)).limit(1)
+    last_id = db.execute(stmt).scalar_one_or_none()
+
+    if not last_id:
+        return "U001"
+
+    number = int(last_id[1:])
+    new_number = number + 1
+
+    return f"U{new_number:03d}"
 
 
 @router.post(
@@ -52,7 +66,7 @@ async def register_user(user_data: RegisterUserSchema, db: Session = Depends(get
     # Tạo user mới
     import uuid
 
-    new_user_id = str(uuid.uuid4())[:10]
+    new_user_id = generate_user_id(db)
     hashed_pwd = get_password_hash(user_data.password)
 
     new_user = User(
@@ -299,7 +313,7 @@ async def login_social(login_data: SocialLoginRequest, db: Session = Depends(get
         from app.core.security import get_password_hash
 
         new_user = User(
-            user_id=f"U{uuid.uuid4().hex[:8].upper()}",
+            user_id=generate_user_id(db),
             full_name=fullname,
             email=email,
             password=get_password_hash(str(uuid.uuid4())),  # Pass ngẫu nhiên
@@ -331,3 +345,28 @@ async def login_social(login_data: SocialLoginRequest, db: Session = Depends(get
             "created_at": str(user.created_at) if user.created_at else None,
         },
     }
+
+
+# ============ CHANGE PASSWORD ENDPOINT =============
+@router.put("/me/password", status_code=status.HTTP_200_OK)
+async def update_password(
+    password_data: ChangePasswordSchema,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Đổi mật khẩu cho user đang đăng nhập"""
+    try:
+        # Hash mật khẩu mới
+        hashed_password = get_password_hash(password_data.password)
+
+        # Cập nhật vào DB
+        current_user.password = hashed_password
+        db.commit()
+
+        return {"message": "Đổi mật khẩu thành công"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi đổi mật khẩu: {str(e)}",
+        )

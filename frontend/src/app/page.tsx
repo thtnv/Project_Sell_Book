@@ -145,7 +145,7 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-slate-800 mb-2">Cập nhật thông tin</h3>
               <p className="text-slate-600 mb-6 text-sm">
                 Chào mừng bạn! <br/>
-                Để thuận tiện cho việc mua hàng và giao nhận, vui lòng cập nhật đầy đủ <b>Số điện thoại</b> và <b>Địa chỉ</b>.
+                Để thuận tiện cho việc mua hàng và bảo mật tài khoản, vui lòng cập nhật đầy đủ <b>Số điện thoại</b>, <b>Địa chỉ</b> và <b>Đặt lại mật khẩu</b>.
               </p>
               
               <div className="flex gap-3">

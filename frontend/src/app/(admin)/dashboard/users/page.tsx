@@ -80,7 +80,7 @@ export default function UserManagementPage() {
       {/* Filter Section */}
       <div className="bg-[#2D3748] p-6 rounded-2xl mb-8 shadow-2xl border border-[#4A5568]">
         <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex-1 min-w-62.5 relative">
+          <div className=" flex-1 min-w-62.5 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
             <input
               type="text"
@@ -135,9 +135,9 @@ export default function UserManagementPage() {
       )}
 
       {/* Table */}
-      <div className="overflow-hidden bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl">
+      <div className="w-[950px] bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-center border-collapse">
+          <table className="min-w-[700px] text-sm text-center border-collapse">
             <thead className="bg-[#1A202C] text-[#4FD1C5]">
               <tr className="uppercase tracking-wider font-bold text-xs">
                 <th className="px-6 py-5 border-b border-[#4A5568]">STT</th>

@@ -13,6 +13,15 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+function normalizeUser(
+  user: Partial<UserInfo> & { full_name?: string }
+): UserInfo {
+  return {
+    ...user,
+    fullname: user.fullname || user.full_name || "",
+  } as UserInfo;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -32,11 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Try to verify token with API
       const verifiedUser = await verifyToken();
       if (verifiedUser) {
-        setUser(verifiedUser);
+        setUser(normalizeUser(verifiedUser));
       } else {
         // Token invalid, get from localStorage as fallback
         const localUser = getCurrentUser();
-        setUser(localUser);
+        setUser(localUser ? normalizeUser(localUser) : null);
       }
       
       setIsLoading(false);
@@ -88,10 +97,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const verifiedUser = await verifyToken();
       if (verifiedUser) {
         console.log("✅ User refreshed:", verifiedUser);
-        setUser(verifiedUser);
-        // Cập nhật localStorage
+        const normalized = normalizeUser(verifiedUser);
+        setUser(normalized);
+
         if (typeof window !== 'undefined') {
-          localStorage.setItem('user_info', JSON.stringify(verifiedUser));
+          localStorage.setItem('user_info', JSON.stringify(normalized));
         }
       } else {
         console.log("⚠️ Cannot verify user, logging out");
