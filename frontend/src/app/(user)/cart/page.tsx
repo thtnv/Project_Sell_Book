@@ -13,11 +13,13 @@ import {
   Truck, 
   ArrowRight, 
   CheckCircle,
-  Loader2
+  Loader2,
+  XCircle,
+  Tag
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { createOrder, OrderCreate } from '@/api/order';
+import { createOrder, OrderCreate, validateVoucher } from '@/api/order';
 import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 
@@ -30,8 +32,10 @@ const CartPage = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
   const [error, setError] = useState("");
-  
+  const [couponMessage, setCouponMessage] = useState("");
+
   const [paymentMethod, setPaymentMethod] = useState<'PM001' | 'PM002'>('PM001');
   const [shippingAddress, setShippingAddress] = useState(user?.address || "");
   
@@ -47,14 +51,44 @@ const CartPage = () => {
     }
   };
 
-  const handleApplyCoupon = () => {
-    if (couponCode === "SALE10") {
-      setAppliedCoupon({ code: "SALE10", percent: 10 });
-      setError("");
-    } else if (couponCode) {
-      setError("Mã giảm giá không hợp lệ");
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    
+    setIsCheckingCoupon(true);
+    setError("");
+    setCouponMessage("");
+    setAppliedCoupon(null);
+
+    try {
+      // Gọi API validateVoucher
+      const data = await validateVoucher(couponCode);
+      
+      // Nếu thành công
+      setAppliedCoupon({ code: data.voucher_code, percent: data.discount_percentage });
+      setCouponMessage(`Áp dụng thành công! Giảm ${data.discount_percentage}%`);
+    } catch (err: unknown) {
+      // Nếu thất bại
+      setError(err instanceof Error ? err.message : "Mã giảm giá không hợp lệ");
       setAppliedCoupon(null);
+    } finally {
+      setIsCheckingCoupon(false);
     }
+  };
+
+  // Xử lý khi nhấn Enter ở ô input
+  const handleCouponKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleApplyCoupon();
+    }
+  };
+
+  // Xóa mã giảm giá
+  const clearCoupon = () => {
+    setCouponCode("");
+    setAppliedCoupon(null);
+    setCouponMessage("");
+    setError("");
   };
 
   const handleCheckout = async () => {
@@ -212,23 +246,54 @@ const CartPage = () => {
               {/* Coupon Section */}
               {items.length > 0 && (
                 <div className="bg-white rounded-[20px] shadow-[0_10px_30px_rgba(15,157,88,0.1)] p-6">
+                  <label className="text-sm font-bold mb-2 block text-gray-700 flex items-center gap-2">
+                    <Tag size={16} /> Mã giảm giá
+                  </label>
                   <div className="flex flex-col md:flex-row gap-4">
-                    <input 
-                      type="text" 
-                      placeholder="Mã giảm giá"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="grow bg-gray-50 border border-gray-100 rounded-xl px-5 py-3 focus:outline-none focus:border-[#0F9D58] transition-all"
-                    />
+                    <div className="relative grow">
+                        <input 
+                        type="text" 
+                        placeholder="Nhập mã giảm giá"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        onKeyDown={handleCouponKeyDown}
+                        disabled={!!appliedCoupon} // Disable khi đã áp dụng
+                        className={`w-full bg-gray-50 border rounded-xl px-5 py-3 focus:outline-none transition-all ${
+                            appliedCoupon 
+                            ? 'border-green-500 text-green-700 bg-green-50' 
+                            : 'border-gray-100 focus:border-[#0F9D58]'
+                        }`}
+                        />
+                        {/* Nút xóa mã */}
+                        {appliedCoupon && (
+                            <button 
+                                onClick={clearCoupon}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                            >
+                                <XCircle size={20} />
+                            </button>
+                        )}
+                    </div>
+                    
                     <button 
                       onClick={handleApplyCoupon}
-                      className="px-8 py-3 border-2 border-[#0F9D58] text-[#0F9D58] font-bold rounded-full hover:bg-[#0F9D58] hover:text-white transition-all"
+                      disabled={isCheckingCoupon || !couponCode || !!appliedCoupon}
+                      className="px-8 py-3 border-2 border-[#0F9D58] text-[#0F9D58] font-bold rounded-full hover:bg-[#0F9D58] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[120px]"
                     >
-                      Áp dụng
+                      {isCheckingCoupon ? <Loader2 className="animate-spin" size={18} /> : "Áp dụng"}
                     </button>
                   </div>
-                  {appliedCoupon && (
-                    <p className="text-sm text-green-600 mt-2">✓ Đã áp dụng mã {appliedCoupon.code}</p>
+                  
+                  {/* Thông báo lỗi hoặc thành công */}
+                  {couponMessage && (
+                    <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                        <CheckCircle size={14}/> {couponMessage}
+                    </p>
+                  )}
+                  {error && !couponMessage && (
+                     <p className="text-sm text-red-500 mt-2 flex items-center gap-1">
+                        <XCircle size={14}/> {error}
+                     </p> 
                   )}
                 </div>
               )}

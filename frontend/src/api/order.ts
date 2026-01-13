@@ -68,6 +68,13 @@ export interface OrderStatusUpdateResponse {
   new_status: string;
 }
 
+// Thêm interface cho response voucher
+export interface VoucherResponse {
+  voucher_code: string;
+  discount_percentage: number;
+  message: string;
+}
+
 // Helper để lấy token
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -256,4 +263,35 @@ export async function getAllOrdersAdmin(
   }
 
   return response.json() as Promise<AdminOrderListResponse>;
+}
+
+/**
+ * Xóa đơn hàng (Khi thanh toán thất bại)
+ */
+export async function deleteOrder(orderId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    console.error("Failed to delete order");
+  }
+}
+
+/** * Validate voucher code
+ */
+export async function validateVoucher(code: string): Promise<VoucherResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/orders/validate-voucher`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ voucher_code: code }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Mã giảm giá không hợp lệ');
+  }
+
+  return response.json();
 }

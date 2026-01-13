@@ -1,5 +1,5 @@
 # backend/app/routers/order.py
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, func, desc
 from typing import Optional
@@ -12,6 +12,7 @@ from app.models.order_detail import OrderDetail  # ← FIX: Thêm import này
 from app.models.order_status import OrderStatus  # ← FIX: Thêm import này
 from app.schemas.order import OrderCreate, OrderResponse, UserOrderHistoryResponse
 from app.services import order as order_service
+from app.models.discount import Discount
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -352,4 +353,46 @@ async def update_order_status_admin(
         "message": "Cập nhật trạng thái thành công",
         "order_id": order.order_id,
         "new_status": order.status.status_name,
+    }
+
+
+@router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_order_endpoint(
+    order_id: str,
+    db: Session = Depends(get_db),
+    # Không bắt buộc login để xóa lúc redirect, hoặc bạn có thể yêu cầu user login
+):
+    """Xóa đơn hàng (Dùng cho webhook hoặc cancel page)"""
+    try:
+        order_service.delete_order(db, order_id)
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.post("/validate-voucher")
+async def validate_voucher(
+    voucher_code: str = Body(..., embed=True), db: Session = Depends(get_db)
+):
+    """Kiểm tra mã giảm giá có hợp lệ không"""
+    from datetime import datetime
+
+    discount = db.execute(
+        select(Discount).where(Discount.voucher_code == voucher_code)
+    ).scalar_one_or_none()
+
+    if not discount:
+        raise HTTPException(status_code=404, detail="Mã giảm giá không tồn tại")
+
+    if discount.expiry_date < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Mã giảm giá đã hết hạn")
+
+    return {
+        "voucher_code": discount.voucher_code,
+        "discount_percentage": float(discount.discount_percentage),
+        "message": "Áp dụng mã giảm giá thành công",
     }

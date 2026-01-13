@@ -364,3 +364,23 @@ def confirm_delivery(db: Session, order_id: str, user_id: str):
     db.refresh(order)
 
     return order
+
+
+def delete_order(db: Session, order_id: str):
+    """Xóa hoàn toàn đơn hàng khỏi database (Dùng khi thanh toán thất bại)"""
+    order = get_order_by_id(db, order_id)
+
+    # Chỉ cho phép xóa nếu trạng thái là processing (chưa thanh toán xong)
+    if order.status.status_name != "processing":
+        raise HTTPException(
+            status_code=400, detail="Không thể xóa đơn hàng đã được xử lý"
+        )
+
+    # Hoàn lại số lượng tồn kho trước khi xóa
+    for detail in order.order_details:
+        detail.book.stock_quantity += detail.quantity
+        detail.book.sold_quantity -= detail.quantity
+
+    db.delete(order)
+    db.commit()
+    return True

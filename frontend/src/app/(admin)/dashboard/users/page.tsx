@@ -1,16 +1,16 @@
 "use client"
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // Thêm useCallback
 import Link from "next/link";
 import { 
   PlusCircle, 
   Search, 
-  Filter, 
   RotateCcw, 
   Edit, 
   Eye, 
   Trash2,
   Loader2,
-  UserCircle
+  UserCircle,
+  Filter
 } from "lucide-react";
 import { fetchUsersAdmin, deleteUserAdmin, UserAdmin } from "@/api/admin/user_admin";
 
@@ -19,15 +19,20 @@ export default function UserManagementPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // State cho bộ lọc
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<'admin' | 'customer' | ''>('');
 
-  const loadUsers = React.useCallback(async () => {
+  // [FIX 1]: Hàm loadUsers nhận tham số, không phụ thuộc vào state bên ngoài trong dependency
+  const loadUsers = useCallback(async (search: string = "", role: string = "") => {
     try {
       setLoading(true);
       setError("");
-      const filter = roleFilter === '' ? undefined : roleFilter;
-      const response = await fetchUsersAdmin(0, 100, searchTerm, filter);
+      
+      const filter = role === '' ? undefined : (role as 'admin' | 'customer');
+      const response = await fetchUsersAdmin(0, 100, search, filter);
+      
       setUsers(response.users);
       setTotal(response.total);
     } catch (err) {
@@ -35,20 +40,24 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, roleFilter]);
+  }, []);
 
+  // [FIX 2]: useEffect chỉ chạy 1 lần lúc đầu để load dữ liệu mặc định
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    loadUsers("", "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
 
+  // [FIX 3]: Hàm tìm kiếm chủ động gọi API
   const handleSearch = () => {
-    loadUsers();
+    loadUsers(searchTerm, roleFilter);
   };
 
   const handleReset = () => {
     setSearchTerm("");
     setRoleFilter('');
-    setTimeout(() => loadUsers(), 100);
+    // Load lại dữ liệu gốc
+    loadUsers("", "");
   };
 
   const handleDelete = async (userId: string, fullName: string) => {
@@ -57,15 +66,18 @@ export default function UserManagementPage() {
     try {
       await deleteUserAdmin(userId);
       alert("Xóa user thành công!");
-      loadUsers();
+      // Load lại với bộ lọc hiện tại
+      loadUsers(searchTerm, roleFilter);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Xóa user thất bại");
     }
   };
 
+  // Nếu đang loading lần đầu tiên (hoặc khi tìm kiếm), hiển thị loader
+  // Lưu ý: Nếu muốn trải nghiệm tốt hơn, có thể bỏ loading toàn màn hình khi search
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-[#1A202C]">
         <Loader2 className="animate-spin text-[#4FD1C5]" size={48} />
       </div>
     );
@@ -80,46 +92,51 @@ export default function UserManagementPage() {
       {/* Filter Section */}
       <div className="bg-[#2D3748] p-6 rounded-2xl mb-8 shadow-2xl border border-[#4A5568]">
         <div className="flex flex-wrap gap-4 items-center">
-          <div className=" flex-1 min-w-62.5 relative">
+          
+          {/* Ô Input Tìm kiếm */}
+          <div className="flex-1 min-w-[250px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
             <input
               type="text"
               placeholder="Tìm theo tên, email, SĐT..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              // [FIX 4]: Nhấn Enter để gọi tìm kiếm
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full bg-[#1A202C] border border-[#4A5568] rounded-xl pl-10 pr-4 py-3 outline-none focus:border-[#4FD1C5] transition-all"
+              className="w-full bg-[#1A202C] border border-[#4A5568] rounded-xl pl-10 pr-4 py-3 outline-none focus:border-[#4FD1C5] transition-all text-white"
             />
           </div>
           
+          {/* Dropdown Role */}
           <select 
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as 'admin' | 'customer' | '')}
-            className="w-full md:w-52 bg-[#1A202C] border border-[#4A5568] rounded-xl px-4 py-3 outline-none focus:border-[#4FD1C5] cursor-pointer"
+            className="w-full md:w-52 bg-[#1A202C] border border-[#4A5568] rounded-xl px-4 py-3 outline-none focus:border-[#4FD1C5] cursor-pointer text-white"
           >
             <option value="">-- Tất cả vai trò --</option>
             <option value="admin">Quản trị viên (Admin)</option>
             <option value="customer">Khách hàng</option>
           </select>
 
-          <button 
+          {/* Nút Tìm kiếm (Thay thế nút Lọc) */}
+           <button
             onClick={handleSearch}
-            className="bg-[#4FD1C5] text-[#1A202C] px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#38B2AC] transition-all transform active:scale-95 shadow-lg shadow-[#4FD1C5]/20"
-          >
+            className="bg-[#4FD1C5] text-[#1A202C] px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#38B2AC] transition-all transform active:scale-95 shadow-lg shadow-[#4FD1C5]/20">
             <Filter size={18} /> LỌC
           </button>
           
+          {/* Nút Làm mới */}
           <button 
             onClick={handleReset}
             type="button" 
-            className="text-[#A0AEC0] hover:text-white flex items-center gap-1 ml-2 transition-colors"
+            className="text-[#A0AEC0] hover:text-white flex items-center gap-1 ml-2 transition-colors whitespace-nowrap"
           >
             <RotateCcw size={16} /> Làm mới
           </button>
 
           <Link
             href="/dashboard/users/create"
-            className="ml-auto flex items-center justify-center gap-2 bg-linear-to-r from-[#10B981] to-[#059669] text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:-translate-y-1 active:scale-95"
+            className="md:ml-auto flex items-center justify-center gap-2 bg-gradient-to-r from-[#10B981] to-[#059669] text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:-translate-y-1 active:scale-95 whitespace-nowrap"
           >
             <PlusCircle size={20} />
             Thêm User Mới
@@ -134,33 +151,35 @@ export default function UserManagementPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="w-[950px] bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="min-w-[700px] text-sm text-center border-collapse">
+      {/* Table Section */}
+      <div className="w-full bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl overflow-hidden">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[#4A5568] scrollbar-track-[#1A202C]">
+          <table className="w-full text-sm text-center border-collapse table-auto whitespace-nowrap">
             <thead className="bg-[#1A202C] text-[#4FD1C5]">
               <tr className="uppercase tracking-wider font-bold text-xs">
-                <th className="px-6 py-5 border-b border-[#4A5568]">STT</th>
-                <th className="px-6 py-5 border-b border-[#4A5568] text-left">Họ Tên</th>
-                <th className="px-6 py-5 border-b border-[#4A5568] text-left">Email</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Số Điện Thoại</th>
-                <th className="px-6 py-5 border-b border-[#4A5568] text-left">Địa Chỉ</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Vai Trò</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Ngày Tạo</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Hành động</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">STT</th>
+                <th className="px-4 py-5 border-b border-[#4A5568] text-left">Họ Tên</th>
+                <th className="px-4 py-5 border-b border-[#4A5568] text-left">Email</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">SĐT</th>
+                <th className="px-4 py-5 border-b border-[#4A5568] text-left">Địa Chỉ</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">Vai Trò</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">Ngày Tạo</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#4A5568]">
               {users.length > 0 ? (
                 users.map((user, index) => (
                   <tr key={user.user_id} className="hover:bg-[#3D4A5E] transition-colors group">
-                    <td className="px-6 py-4">{index + 1}</td>
-                    <td className="px-6 py-4 text-left font-medium">{user.full_name}</td>
-                    <td className="px-6 py-4 text-left text-gray-300">{user.email}</td>
-                    <td className="px-6 py-4">{user.phone || 'N/A'}</td>
-                    <td className="px-6 py-4 text-left max-w-xs truncate">{user.address || 'N/A'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                    <td className="px-4 py-4">{index + 1}</td>
+                    <td className="px-4 py-4 text-left font-medium">{user.full_name}</td>
+                    <td className="px-4 py-4 text-left text-gray-300">{user.email}</td>
+                    <td className="px-4 py-4">{user.phone || 'N/A'}</td>
+                    <td className="px-4 py-4 text-left max-w-[200px] truncate" title={user.address || ''}>
+                      {user.address || 'N/A'}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-block ${
                         user.role === 'admin' 
                           ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
                           : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
@@ -168,10 +187,10 @@ export default function UserManagementPage() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-[#A0AEC0]">
+                    <td className="px-4 py-4 text-[#A0AEC0]">
                       {new Date(user.created_at).toLocaleDateString('vi-VN')}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex justify-center items-center gap-2">
                         <Link 
                           href={`/dashboard/users/${user.user_id}`} 

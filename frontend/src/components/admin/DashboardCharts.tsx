@@ -16,7 +16,6 @@ import {
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 
-// 1. Định nghĩa Interface cho dữ liệu đầu vào (Thay thế cho 'any')
 interface DashboardDataProps {
   months: string[];
   delivered: number[];
@@ -44,7 +43,6 @@ const DashboardCharts = ({ data }: DashboardChartsProps) => {
     blue: '#63B3ED'
   };
 
-  // Cấu hình dữ liệu cho Line Chart
   const lineData = {
     labels: data.months,
     datasets: [
@@ -53,7 +51,6 @@ const DashboardCharts = ({ data }: DashboardChartsProps) => {
     ]
   };
 
-  // Cấu hình dữ liệu cho Doughnut Chart
   const doughnutData = {
     labels: ['Chờ xác nhận', 'Đang xử lý', 'Đang giao', 'Đã giao', 'Đã hủy'],
     datasets: [{
@@ -63,7 +60,6 @@ const DashboardCharts = ({ data }: DashboardChartsProps) => {
     }]
   };
 
-  // Cấu hình dữ liệu cho Bar Chart
   const barData = {
     labels: data.months,
     datasets: [{
@@ -74,17 +70,14 @@ const DashboardCharts = ({ data }: DashboardChartsProps) => {
     }]
   };
 
-  // Định nghĩa Options với kiểu dữ liệu chuẩn của Chart.js
-  const commonOptions: ChartOptions<'line' | 'bar' | 'doughnut'> = {
+  // Options chung
+  const commonOptions: ChartOptions<'line' | 'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { 
-        labels: { 
-          color: '#EDF2F7', 
-          usePointStyle: true,
-          font: { family: 'Inter' } 
-        } 
+        position: 'bottom', // Đưa legend xuống dưới để biểu đồ có nhiều không gian trung tâm hơn
+        labels: { color: '#EDF2F7', usePointStyle: true, font: { family: 'Inter', size: 12 } } 
       }
     },
     scales: {
@@ -93,28 +86,48 @@ const DashboardCharts = ({ data }: DashboardChartsProps) => {
     }
   };
 
+  // Cấu hình riêng cho Doughnut để đảm bảo căn giữa
+  const doughnutOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: 10 // Tạo khoảng trống nhỏ để không bị cắt mép
+    },
+    plugins: {
+      legend: {
+        position: 'bottom', // Legend ở dưới giúp vòng tròn tập trung vào giữa
+        labels: { color: '#EDF2F7', usePointStyle: true }
+      }
+    },
+    cutout: '70%',
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col lg:flex-row gap-6">
+        {/* Line Chart */}
         <div className="flex-1 bg-[#1A202C]/60 border border-[#4A5568] rounded-2xl p-6 h-100">
           <h3 className="text-[#63B3ED] font-semibold mb-4 text-center">📉 Xu hướng theo tháng</h3>
-          <Line data={lineData} options={commonOptions as ChartOptions<'line'>} />
+          <div className="h-100"> {/* Wrapper để kiểm soát chiều cao canvas */}
+            <Line data={lineData} options={commonOptions as ChartOptions<'line'>} />
+          </div>
         </div>
-        <div className="flex-1 bg-[#1A202C]/60 border border-[#4A5568] rounded-2xl p-6 h-100">
+
+        {/* Doughnut Chart - Đã sửa lỗi lệch */}
+        <div className="flex-1 bg-[#1A202C]/60 border border-[#4A5568] rounded-2xl p-6 h-100 flex flex-col">
           <h3 className="text-[#F6AD55] font-semibold mb-4 text-center">🥧 Tỷ lệ trạng thái</h3>
-          <Doughnut 
-            data={doughnutData} 
-            options={{
-              ...commonOptions, 
-              cutout: '70%',
-              scales: { x: { display: false }, y: { display: false } } // Doughnut không cần trục tọa độ
-            } as ChartOptions<'doughnut'>} 
-          />
+          <div className="relative grow"> {/* Container chứa canvas để căn giữa */}
+            <Doughnut data={doughnutData} options={doughnutOptions} />
+          </div>
         </div>
       </div>
+
+      {/* Bar Chart */}
       <div className="bg-[#1A202C]/60 border border-[#4A5568] rounded-2xl p-6 h-100">
         <h3 className="text-[#48BB78] font-semibold mb-4 text-center">💰 Doanh thu thực tế</h3>
-        <Bar data={barData} options={commonOptions as ChartOptions<'bar'>} />
+        <div className="h-100">
+          <Bar data={barData} options={commonOptions as ChartOptions<'bar'>} />
+        </div>
       </div>
     </div>
   );

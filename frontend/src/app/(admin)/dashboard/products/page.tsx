@@ -24,15 +24,15 @@ export default function AdminProductManagement() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [total, setTotal] = useState(0);
 
-  const loadBooks = React.useCallback(async () => {
+  // [FIX 1]: Sửa hàm loadBooks để nhận tham số, không phụ thuộc state searchTerm trong dependency
+  const loadBooks = React.useCallback(async (search: string = "", category: string = "") => {
     try {
       setLoading(true);
       setError("");
-      console.log("🔄 Đang gọi API...");
-      const response = await fetchBooksAdmin(0, 100, searchTerm, categoryFilter);
-      console.log("✅ API Response:", response);
-      console.log("📚 Books:", response.books);
-      console.log("📊 Total:", response.total);
+      
+      // Dùng tham số truyền vào thay vì state trực tiếp
+      const response = await fetchBooksAdmin(0, 100, search, category);
+      
       setBooks(response.books);
       setTotal(response.total);
     } catch (err) {
@@ -41,20 +41,25 @@ export default function AdminProductManagement() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, categoryFilter]);
+  }, []); // Dependency array rỗng để hàm không bị tạo lại khi gõ phím
 
+  // [FIX 2]: useEffect chỉ chạy 1 lần lúc đầu (hoặc khi category thay đổi nếu bạn muốn)
   useEffect(() => {
-    loadBooks();
-  }, [loadBooks]);
+    // Lúc đầu load lên thì chưa có search term
+    loadBooks(searchTerm, categoryFilter); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Bỏ loadBooks ra khỏi dependency để tránh vòng lặp, hoặc chỉ để []
 
+  // [FIX 3]: Hàm tìm kiếm sẽ chủ động gọi API với giá trị hiện tại
   const handleSearch = () => {
-    loadBooks();
+    loadBooks(searchTerm, categoryFilter);
   };
 
   const handleReset = () => {
     setSearchTerm("");
     setCategoryFilter("");
-    setTimeout(() => loadBooks(), 100);
+    // Gọi lại loadBooks với giá trị rỗng
+    loadBooks("", "");
   };
 
   const handleDelete = async (bookId: string, title: string) => {
@@ -63,7 +68,8 @@ export default function AdminProductManagement() {
     try {
       await deleteBookAdmin(bookId);
       alert("Xóa sách thành công!");
-      loadBooks();
+      // Load lại với state hiện tại
+      loadBooks(searchTerm, categoryFilter);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Xóa sách thất bại");
     }
@@ -110,29 +116,34 @@ export default function AdminProductManagement() {
       {/* Filter Section */}
       <div className="bg-[#2D3748] p-6 rounded-xl shadow-lg border border-gray-700">
         <div className="flex flex-wrap md:flex-nowrap gap-4 items-center">
+          
+          {/* Ô Input Tìm kiếm */}
           <div className="grow relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Tìm tên sách hoặc tác giả..."
+              placeholder="Nhập tên sách hoặc tác giả để tìm..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              // [FIX 4]: Khi nhấn Enter thì gọi handleSearch
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="w-full bg-[#1A202C] border border-[#4A5568] text-white pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:border-[#4CAF50] transition-colors"
             />
           </div>
 
+          {/* Nút Tìm Kiếm */}
           <button
             onClick={handleSearch}
-            className="flex items-center justify-center gap-2 bg-[#4CAF50] hover:bg-[#45a049] text-white px-6 py-2.5 rounded-lg font-bold transition-all"
+            className="flex items-center justify-center gap-2 bg-[#4CAF50] hover:bg-[#45a049] text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-md hover:-translate-y-0.5 active:scale-95 whitespace-nowrap"
           >
-            <Filter size={18} />
-            LỌC
+            <Search size={18} />
+            Tìm kiếm
           </button>
 
+          {/* Nút Làm mới */}
           <button
             onClick={handleReset}
-            className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-6 py-2.5 rounded-lg font-bold transition-all"
+            className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-md hover:-translate-y-0.5 active:scale-95 whitespace-nowrap"
           >
             <RotateCcw size={18} />
             Làm mới

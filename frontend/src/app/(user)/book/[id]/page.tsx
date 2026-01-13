@@ -17,6 +17,8 @@ import {
   Calendar,
   Package,
   Truck,
+  Tag, 
+  XCircle 
 } from "lucide-react";
 
 import Header from "@/components/Layout/Header";
@@ -30,7 +32,7 @@ import {
   BookDetail,
   BookList,
 } from "@/api/book";
-import { createOrder, OrderCreate } from "@/api/order";
+import { createOrder, OrderCreate, validateVoucher} from "@/api/order";
 
 const getImageUrl = (image: string | null) => {
   if (!image) return "/books/book-default.jpg";
@@ -98,7 +100,9 @@ const BookDetailPage = () => {
   const [imgError, setImgError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
-
+  const [discountPercent, setDiscountPercent] = useState(0); 
+  const [couponMessage, setCouponMessage] = useState(""); 
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false); 
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -138,6 +142,41 @@ const BookDetailPage = () => {
     }
   };
 
+  // ===> THÊM HÀM XỬ LÝ COUPON <===
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    
+    setIsCheckingCoupon(true);
+    setCouponMessage("");
+    setDiscountPercent(0);
+
+    try {
+      const data = await validateVoucher(couponCode);
+      setDiscountPercent(data.discount_percentage);
+      setCouponMessage(`Đã giảm ${data.discount_percentage}%`);
+    } catch (err: unknown) {
+      setCouponMessage(err instanceof Error ? err.message : "Không thể áp dụng mã giảm giá");
+      setDiscountPercent(0);
+    } finally {
+      setIsCheckingCoupon(false);
+    }
+  };
+
+  // Hàm xử lý khi nhấn Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Ngăn submit form nếu có
+      handleApplyCoupon();
+    }
+  };
+
+  // Hàm xóa coupon
+  const clearCoupon = () => {
+    setCouponCode("");
+    setDiscountPercent(0);
+    setCouponMessage("");
+  };
+  
   const handleOrderNow = async () => {
     if (!book || book.stock_quantity === 0) return;
 
@@ -222,7 +261,15 @@ const BookDetailPage = () => {
   }
 
   const imageSrc = imgError ? "/books/book-default.jpg" : getImageUrl(book.cover_image_url);
-  const totalPrice = Number(book.price) * quantity;
+  // 1. KHAI BÁO PHÍ VẬN CHUYỂN
+  const SHIPPING_FEE = 30000;
+
+  // ===> TÍNH TOÁN LẠI GIÁ TIỀN <===
+  const subTotal = Number(book.price) * quantity;
+  const discountAmount = subTotal * (discountPercent / 100);
+  
+  // 2. CỘNG THÊM PHÍ VẬN CHUYỂN VÀO TỔNG
+  const totalPrice = subTotal - discountAmount + SHIPPING_FEE;
 
   return (
     <>
@@ -407,21 +454,73 @@ const BookDetailPage = () => {
                     </div>
 
                     <div>
-                      <label className="text-sm font-bold mb-2 block text-gray-700">
-                        Mã giảm giá (nếu có)
+                      <label className="text-sm font-bold mb-2 block text-gray-700 items-center gap-2">
+                        <Tag size={16} className="inline mr-1"/>
+                        Mã giảm giá
                       </label>
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Nhập mã giảm giá"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 outline-none"
-                      />
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            onKeyDown={handleKeyDown} // Bắt sự kiện Enter
+                            placeholder="Nhập mã giảm giá"
+                            disabled={discountPercent > 0} // Disable khi đã áp dụng
+                            className={`w-full px-4 py-3 border rounded-lg outline-none focus:ring-2 transition-all ${
+                                discountPercent > 0 
+                                ? "border-green-500 bg-green-50 text-green-700" 
+                                : "border-gray-300 focus:border-[#0F9D58] focus:ring-[#0F9D58]/20"
+                            }`}
+                          />
+                          {discountPercent > 0 && (
+                            <button 
+                                onClick={clearCoupon}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                            >
+                                <XCircle size={18} />
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={isCheckingCoupon || !couponCode || discountPercent > 0}
+                          className="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                        >
+                          {isCheckingCoupon ? <Loader2 className="animate-spin" size={18} /> : "Áp dụng"}
+                        </button>
+                      </div>
+                      {/* Hiển thị thông báo coupon */}
+                      {couponMessage && (
+                        <p className={`text-xs mt-2 font-medium ${discountPercent > 0 ? "text-green-600" : "text-red-500"}`}>
+                          {discountPercent > 0 ? "✓ " : "✕ "} {couponMessage}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 font-medium">Tổng tiền:</span>
+                    {/* Phần tổng tiền cập nhật */}
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <span>Tạm tính:</span>
+                        <span>{subTotal.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                      
+                      {/* 3. THÊM DÒNG HIỂN THỊ PHÍ VẬN CHUYỂN */}
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <span>Phí vận chuyển:</span>
+                        <span>{SHIPPING_FEE.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                      
+                      {discountPercent > 0 && (
+                        <div className="flex justify-between items-center text-sm text-green-600 font-medium">
+                          <span>Giảm giá ({discountPercent}%):</span>
+                          <span>- {discountAmount.toLocaleString('vi-VN')} đ</span>
+                        </div>
+                      )}
+
+                      <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                        <span className="text-gray-800 font-bold">Tổng thanh toán:</span>
                         <span className="text-2xl font-bold text-[#0F9D58]">
                           {totalPrice.toLocaleString('vi-VN')} đ
                         </span>

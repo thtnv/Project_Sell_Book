@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, PlusCircle, Upload, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { createBookAdmin, BookCreateData } from '@/api/admin/book_admin';
+import { fetchCategoriesAdmin, CategoryAdmin } from '@/api/admin/category_admin';
 
 export default function AddBookPage() {
   const router = useRouter();
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState<CategoryAdmin[]>([]);
   
   const [formData, setFormData] = useState<BookCreateData>({
     title: "",
@@ -24,6 +27,24 @@ export default function AddBookPage() {
     description: "",
     cover_image_url: ""
   });
+
+  // Load categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await fetchCategoriesAdmin(0, 100);
+        setCategories(response.categories);
+      } catch (err) {
+        console.error("Error loading categories:", err);
+        setError("Không thể tải danh sách thể loại");
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -142,18 +163,27 @@ export default function AddBookPage() {
                   <label className="block text-gray-300 font-semibold mb-2">
                     Thể Loại <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="category_id"
-                    value={formData.category_id}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-teal-400"
-                    required
-                  >
-                    <option value="">-- Chọn thể loại --</option>
-                    <option value="CAT001">Công nghệ thông tin</option>
-                    <option value="CAT002">Kinh tế</option>
-                    <option value="CAT003">Văn học</option>
-                  </select>
+                  {categoriesLoading ? (
+                    <div className="flex items-center justify-center py-3 bg-gray-700 rounded-lg">
+                      <Loader2 className="animate-spin text-teal-400" size={20} />
+                      <span className="ml-2 text-gray-400">Đang tải...</span>
+                    </div>
+                  ) : (
+                    <select
+                      name="category_id"
+                      value={formData.category_id}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-teal-400"
+                      required
+                    >
+                      <option value="">-- Chọn thể loại --</option>
+                      {categories.map((cat) => (
+                        <option key={cat.category_id} value={cat.category_id}>
+                          {cat.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div>
@@ -225,7 +255,7 @@ export default function AddBookPage() {
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
               <button 
                 type="submit"
-                disabled={loading}
+                disabled={loading || categoriesLoading}
                 className="px-10 py-4 bg-teal-500 hover:bg-teal-600 text-gray-900 font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
