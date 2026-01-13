@@ -8,7 +8,7 @@ load_dotenv(dotenv_path=env_path)
 
 class Settings:
     # Lấy DATABASE_URL từ .env, nếu không có sẽ dùng mặc định
-    DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:123456@localhost:3306/book_shop")
+    DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root@localhost/book_shop")
     
     # Cấu hình bảo mật
     SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key")
