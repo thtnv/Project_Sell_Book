@@ -80,7 +80,7 @@ export default function UserManagementPage() {
       {/* Filter Section */}
       <div className="bg-[#2D3748] p-6 rounded-2xl mb-8 shadow-2xl border border-[#4A5568]">
         <div className="flex flex-wrap gap-4 items-center">
-          <div className=" flex-1 min-w-62.5 relative">
+          <div className="flex-1 min-w-62.5 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
             <input
               type="text"
@@ -119,7 +119,7 @@ export default function UserManagementPage() {
 
           <Link
             href="/dashboard/users/create"
-            className="ml-auto flex items-center justify-center gap-2 bg-linear-to-r from-[#10B981] to-[#059669] text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:-translate-y-1 active:scale-95"
+            className="md:ml-auto flex items-center justify-center gap-2 bg-linear-to-r from-[#10B981] to-[#059669] text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:-translate-y-1 active:scale-95"
           >
             <PlusCircle size={20} />
             Thêm User Mới
@@ -134,32 +134,32 @@ export default function UserManagementPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="w-[950px] bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="min-w-[700px] text-sm text-center border-collapse">
+      {/* Table - ĐÃ SỬA: w-full thay vì w-[950px] */}
+      <div className="w-full bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl overflow-hidden">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[#4A5568] scrollbar-track-[#1A202C]">
+          <table className="w-full text-sm text-center border-collapse table-auto">
             <thead className="bg-[#1A202C] text-[#4FD1C5]">
               <tr className="uppercase tracking-wider font-bold text-xs">
-                <th className="px-6 py-5 border-b border-[#4A5568]">STT</th>
-                <th className="px-6 py-5 border-b border-[#4A5568] text-left">Họ Tên</th>
-                <th className="px-6 py-5 border-b border-[#4A5568] text-left">Email</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Số Điện Thoại</th>
-                <th className="px-6 py-5 border-b border-[#4A5568] text-left">Địa Chỉ</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Vai Trò</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Ngày Tạo</th>
-                <th className="px-6 py-5 border-b border-[#4A5568]">Hành động</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">STT</th>
+                <th className="px-4 py-5 border-b border-[#4A5568] text-left">Họ Tên</th>
+                <th className="px-4 py-5 border-b border-[#4A5568] text-left">Email</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">SĐT</th>
+                <th className="px-4 py-5 border-b border-[#4A5568] text-left">Địa Chỉ</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">Vai Trò</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">Ngày Tạo</th>
+                <th className="px-4 py-5 border-b border-[#4A5568]">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#4A5568]">
               {users.length > 0 ? (
                 users.map((user, index) => (
                   <tr key={user.user_id} className="hover:bg-[#3D4A5E] transition-colors group">
-                    <td className="px-6 py-4">{index + 1}</td>
-                    <td className="px-6 py-4 text-left font-medium">{user.full_name}</td>
-                    <td className="px-6 py-4 text-left text-gray-300">{user.email}</td>
-                    <td className="px-6 py-4">{user.phone || 'N/A'}</td>
-                    <td className="px-6 py-4 text-left max-w-xs truncate">{user.address || 'N/A'}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">{index + 1}</td>
+                    <td className="px-4 py-4 text-left font-medium whitespace-nowrap">{user.full_name}</td>
+                    <td className="px-4 py-4 text-left text-gray-300">{user.email}</td>
+                    <td className="px-4 py-4 whitespace-nowrap">{user.phone || 'N/A'}</td>
+                    <td className="px-4 py-4 text-left max-w-50 truncate">{user.address || 'N/A'}</td>
+                    <td className="px-4 py-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
                         user.role === 'admin' 
                           ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
@@ -168,10 +168,10 @@ export default function UserManagementPage() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-[#A0AEC0]">
+                    <td className="px-4 py-4 text-[#A0AEC0] whitespace-nowrap">
                       {new Date(user.created_at).toLocaleDateString('vi-VN')}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex justify-center items-center gap-2">
                         <Link 
                           href={`/dashboard/users/${user.user_id}`} 
