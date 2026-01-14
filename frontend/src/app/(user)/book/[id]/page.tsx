@@ -16,9 +16,7 @@ import {
   Loader2,
   Calendar,
   Package,
-  Truck,
-  Tag, 
-  XCircle 
+  Truck
 } from "lucide-react";
 
 import Header from "@/components/Layout/Header";
@@ -32,7 +30,7 @@ import {
   BookDetail,
   BookList,
 } from "@/api/book";
-import { createOrder, OrderCreate, validateVoucher} from "@/api/order";
+import { createOrder, OrderCreate} from "@/api/order";
 
 const getImageUrl = (image: string | null) => {
   if (!image) return "/books/book-default.jpg";
@@ -96,13 +94,11 @@ const BookDetailPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'PM001' | 'PM002'>('PM001');
   const [shippingAddress, setShippingAddress] = useState("");
-  const [couponCode, setCouponCode] = useState("");
+  const [couponCode] = useState("");
   const [imgError, setImgError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0); 
-  const [couponMessage, setCouponMessage] = useState(""); 
-  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false); 
+  const [discountPercent] = useState(0); 
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -140,41 +136,6 @@ const BookDetailPage = () => {
     if (next >= 1 && next <= book.stock_quantity) {
       setQuantity(next);
     }
-  };
-
-  // ===> THÊM HÀM XỬ LÝ COUPON <===
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
-    
-    setIsCheckingCoupon(true);
-    setCouponMessage("");
-    setDiscountPercent(0);
-
-    try {
-      const data = await validateVoucher(couponCode);
-      setDiscountPercent(data.discount_percentage);
-      setCouponMessage(`Đã giảm ${data.discount_percentage}%`);
-    } catch (err: unknown) {
-      setCouponMessage(err instanceof Error ? err.message : "Không thể áp dụng mã giảm giá");
-      setDiscountPercent(0);
-    } finally {
-      setIsCheckingCoupon(false);
-    }
-  };
-
-  // Hàm xử lý khi nhấn Enter
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); // Ngăn submit form nếu có
-      handleApplyCoupon();
-    }
-  };
-
-  // Hàm xóa coupon
-  const clearCoupon = () => {
-    setCouponCode("");
-    setDiscountPercent(0);
-    setCouponMessage("");
   };
   
   const handleOrderNow = async () => {
@@ -451,52 +412,6 @@ const BookDetailPage = () => {
                           </div>
                         </label>
                       </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-bold mb-2 block text-gray-700 items-center gap-2">
-                        <Tag size={16} className="inline mr-1"/>
-                        Mã giảm giá
-                      </label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="text"
-                            value={couponCode}
-                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                            onKeyDown={handleKeyDown} // Bắt sự kiện Enter
-                            placeholder="Nhập mã giảm giá"
-                            disabled={discountPercent > 0} // Disable khi đã áp dụng
-                            className={`w-full px-4 py-3 border rounded-lg outline-none focus:ring-2 transition-all ${
-                                discountPercent > 0 
-                                ? "border-green-500 bg-green-50 text-green-700" 
-                                : "border-gray-300 focus:border-[#0F9D58] focus:ring-[#0F9D58]/20"
-                            }`}
-                          />
-                          {discountPercent > 0 && (
-                            <button 
-                                onClick={clearCoupon}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
-                            >
-                                <XCircle size={18} />
-                            </button>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleApplyCoupon}
-                          disabled={isCheckingCoupon || !couponCode || discountPercent > 0}
-                          className="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-                        >
-                          {isCheckingCoupon ? <Loader2 className="animate-spin" size={18} /> : "Áp dụng"}
-                        </button>
-                      </div>
-                      {/* Hiển thị thông báo coupon */}
-                      {couponMessage && (
-                        <p className={`text-xs mt-2 font-medium ${discountPercent > 0 ? "text-green-600" : "text-red-500"}`}>
-                          {discountPercent > 0 ? "✓ " : "✕ "} {couponMessage}
-                        </p>
-                      )}
                     </div>
 
                     {/* Phần tổng tiền cập nhật */}

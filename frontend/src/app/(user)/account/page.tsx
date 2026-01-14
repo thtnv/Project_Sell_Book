@@ -29,6 +29,8 @@ import { updateProfile, updatePassword, ProfileUpdateData } from "@/api/profile"
 
 export default function UserProfilePage() {
   const { user, refreshUser, isLoading } = useAuth();
+  // DEBUG: Kiểm tra xem user có auth_provider không
+  console.log("Current User:", user);
   const [activeModal, setActiveModal] = useState<"detail" | "cancel" | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,12 +42,14 @@ export default function UserProfilePage() {
   const [updateSuccess, setUpdateSuccess] = useState(false);
   // State cho đổi mật khẩu
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   // State ẩn/hiện mật khẩu
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // User info form
@@ -185,14 +189,17 @@ export default function UserProfilePage() {
     }
   };
   // --- HÀM XỬ LÝ ĐỔI MẬT KHẨU ---
-  const handleChangePassword = async () => {
-    setPasswordError("");
+const handleChangePassword = async () => {
     
+    // [FIX LỖI 3]: Validate mật khẩu cũ
+    if (!oldPassword) {
+        setPasswordError("Vui lòng nhập mật khẩu hiện tại");
+        return;
+    }
     if (newPassword.length < 6) {
-      setPasswordError("Mật khẩu phải có ít nhất 6 ký tự");
+      setPasswordError("Mật khẩu mới phải có ít nhất 6 ký tự");
       return;
     }
-    
     if (newPassword !== confirmPassword) {
       setPasswordError("Mật khẩu xác nhận không khớp");
       return;
@@ -200,13 +207,15 @@ export default function UserProfilePage() {
 
     setPasswordLoading(true);
     try {
-      await updatePassword(newPassword);
+      // Gọi API với mật khẩu cũ và mới
+      await updatePassword(oldPassword, newPassword);
       alert("Đổi mật khẩu thành công!");
       setShowPasswordModal(false);
+      setOldPassword(""); // Reset
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err: unknown) {
-      setPasswordError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại");
+    } catch (err: any) {
+      setPasswordError(err.message || "Đổi mật khẩu thất bại");
     } finally {
       setPasswordLoading(false);
     }
@@ -350,14 +359,18 @@ export default function UserProfilePage() {
                   Lưu thay đổi
                 </button>
 
-                {/* --- NÚT ĐỔI MẬT KHẨU MỚI --- */}
-                <button 
-                  onClick={() => setShowPasswordModal(true)}
-                  className="w-full bg-white border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 mt-2"
-                >
-                  <Lock size={18} />
-                  Đổi mật khẩu
-                </button>
+                {/* [FIX LỖI 1]: Chỉ hiện nút nếu là user local */}
+                {/* Ép kiểu any tạm thời để truy cập auth_provider */}
+                
+                {(user as any)?.auth_provider === 'local' && (
+                    <button 
+                      onClick={() => setShowPasswordModal(true)}
+                      className="w-full bg-white border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 mt-2"
+                    >
+                      <Lock size={18} />
+                      Đổi mật khẩu
+                    </button>
+                )}
               </div>
             </div>
           </div>
@@ -528,29 +541,44 @@ export default function UserProfilePage() {
       {showPasswordModal && (
         <Modal title="Đổi mật khẩu" onClose={() => setShowPasswordModal(false)}>
           <div className="space-y-4 pt-2">
-            {passwordError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {passwordError}
-              </div>
-            )}
             
-            {/* Input Mật khẩu mới */}
+            {/* INPUT MẬT KHẨU CŨ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Mật khẩu mới</label>
+              <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Mật khẩu hiện tại</label>
               <div className="relative">
                 <input 
-                  type={showNewPassword ? "text" : "password"} 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  type={showOldPassword ? "text" : "password"} 
+                  value={oldPassword} 
+                  onChange={(e) => setOldPassword(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:bg-white focus:border-emerald-500 transition-all pr-10"
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder="Nhập mật khẩu cũ"
                 />
                 <button 
                   type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  onClick={() => setShowOldPassword(!showOldPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
                 >
-                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showOldPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+            {/* Input Mật khẩu mới */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider ml-1">Mật khẩu hiện tại</label>
+              <div className="relative">
+                <input 
+                  type={showOldPassword ? "text" : "password"} 
+                  value={oldPassword} 
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm outline-none focus:bg-white focus:border-emerald-500 transition-all pr-10"
+                  placeholder="Nhập mật khẩu cũ"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
+                >
+                  {showOldPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -584,6 +612,7 @@ export default function UserProfilePage() {
               {passwordLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
               Lưu mật khẩu
             </button>
+          </div>
           </div>
         </Modal>
       )}

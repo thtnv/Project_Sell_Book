@@ -74,11 +74,14 @@ export async function updateProfile(data: ProfileUpdateData): Promise<UserProfil
 /**
  * Đổi mật khẩu
  */
-export async function updatePassword(password: string): Promise<unknown> {
+export async function updatePassword(oldPassword: string, newPassword: string): Promise<unknown> {
   const response = await fetch(`${API_BASE_URL}/api/users/me/password`, {
     method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ 
+        old_password: oldPassword, 
+        new_password: newPassword 
+    }),
   });
 
   if (!response.ok) {

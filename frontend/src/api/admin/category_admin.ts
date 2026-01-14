@@ -8,7 +8,6 @@ export interface CategoryAdmin {
 }
 
 export interface CategoryCreateData {
-  category_id: string;
   category_name: string;
 }
 

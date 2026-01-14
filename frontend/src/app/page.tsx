@@ -10,6 +10,7 @@ import {data} from '@/data/data'
 import { useEffect, useState } from "react";
 import { fetchBookList, BookList, BookFilter } from "@/api/book";
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const [books, setBooks] = useState<BookList[]>([]);
@@ -30,16 +31,19 @@ export default function HomePage() {
     }
   };
 
+  const { user } = useAuth(); // Lấy user để check provider
+  
   // Initial load
   useEffect(() => {
     loadBooks(activeFilter);
     const shouldShowAlert = localStorage.getItem('showProfileAlert');
-    if (shouldShowAlert === 'true') {
+    
+    // [FIX LỖI 2]: Chỉ hiện Modal nếu là User Social (không phải local)
+    if (shouldShowAlert === 'true' && user && (user as any).auth_provider !== 'local') {
       setShowProfileModal(true);
-      // Xóa cờ để không hiện lại lần sau (hoặc giữ lại nếu muốn nhắc mỗi lần vào Home)
       localStorage.removeItem('showProfileAlert');
     }
-  }, [activeFilter]);
+  }, [activeFilter, user]);
 
   // Handle filter change
   const handleFilterChange = (filter: BookFilter) => {
@@ -145,7 +149,7 @@ export default function HomePage() {
               <h3 className="text-xl font-bold text-slate-800 mb-2">Cập nhật thông tin</h3>
               <p className="text-slate-600 mb-6 text-sm">
                 Chào mừng bạn! <br/>
-                Để thuận tiện cho việc mua hàng và bảo mật tài khoản, vui lòng cập nhật đầy đủ <b>Số điện thoại</b>, <b>Địa chỉ</b> và <b>Đặt lại mật khẩu</b>.
+                Để thuận tiện cho việc mua hàng và giao nhận, vui lòng cập nhật đầy đủ <b>Số điện thoại</b> và <b>Địa chỉ</b>.
               </p>
               
               <div className="flex gap-3">

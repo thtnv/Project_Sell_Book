@@ -83,4 +83,5 @@ class UpdateProfileSchema(BaseModel):
 
 
 class ChangePasswordSchema(BaseModel):
-    password: str = Field(..., min_length=6)
+    old_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)

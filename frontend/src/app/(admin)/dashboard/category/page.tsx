@@ -98,7 +98,6 @@ const CategoryManagement = () => {
             <thead className="bg-[#1A202C] text-[#A0AEC0] uppercase font-bold text-xs tracking-wider">
               <tr>
                 <th className="px-4 py-4 w-[8%] border-b border-gray-700">STT</th>
-                <th className="px-4 py-4 w-[15%] border-b border-gray-700 text-left">Mã thể loại</th>
                 <th className="px-4 py-4 w-[30%] border-b border-gray-700 text-left">Tên thể loại</th>
                 <th className="px-4 py-4 w-[17%] border-b border-gray-700">Số sách khác nhau</th>
                 <th className="px-4 py-4 w-[17%] border-b border-gray-700">Tổng tồn kho</th>
@@ -113,9 +112,6 @@ const CategoryManagement = () => {
                     className="hover:bg-[#3D4A5E] transition-colors group"
                   >
                     <td className="px-4 py-4">{index + 1}</td>
-                    <td className="px-4 py-4 text-left font-mono text-[#4FD1C5]">
-                      {item.category_id}
-                    </td>
                     <td className="px-4 py-4 text-left font-medium text-white group-hover:text-[#4FD1C5]">
                       {item.category_name}
                     </td>

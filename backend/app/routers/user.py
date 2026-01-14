@@ -354,16 +354,26 @@ async def update_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Đổi mật khẩu cho user đang đăng nhập"""
+    """Đổi mật khẩu (Yêu cầu mật khẩu cũ)"""
     try:
-        # Hash mật khẩu mới
-        hashed_password = get_password_hash(password_data.password)
+        # 1. Kiểm tra mật khẩu cũ
+        # Nếu là user social, họ không biết pass cũ -> sẽ không qua được bước này -> Bảo mật OK
+        if not verify_password(password_data.old_password, current_user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mật khẩu cũ không chính xác",
+            )
 
-        # Cập nhật vào DB
+        # 2. Hash mật khẩu mới
+        hashed_password = get_password_hash(password_data.new_password)
+
+        # 3. Cập nhật
         current_user.password = hashed_password
         db.commit()
 
         return {"message": "Đổi mật khẩu thành công"}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(
