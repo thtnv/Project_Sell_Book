@@ -29,8 +29,11 @@ export interface OrderStatusStats {
 
 export interface MonthlyTrends {
   months: string[];
-  delivered: number[];
-  cancelled: number[];
+  delivered: number[]; // Đã giao (Completed)
+  cancelled: number[]; // Đã hủy
+  processing?: number[]; // Chờ xử lý
+  confirmed?: number[];  // Đang xử lý
+  shipping?: number[];   // Đang giao
   revenue: number[];
 }
 
@@ -75,9 +78,9 @@ export async function fetchOrderStatusStats(): Promise<OrderStatusStats> {
   return response.json();
 }
 
-export async function fetchMonthlyTrends(months: number = 5): Promise<MonthlyTrends> {
+export async function fetchMonthlyTrends(year: number): Promise<MonthlyTrends> {
   const response = await fetch(
-    `${API_BASE_URL}/api/dashboard/monthly-trends?months=${months}`,
+    `${API_BASE_URL}/api/dashboard/monthly-trends?year=${year}`,
     {
       method: 'GET',
       headers: getAuthHeaders(),

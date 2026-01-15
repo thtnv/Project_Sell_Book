@@ -272,7 +272,7 @@ const BookDetailPage = () => {
               </div>
 
               <div className="lg:col-span-7 flex flex-col">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+                <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
                   {book.title}
                 </h1>
 

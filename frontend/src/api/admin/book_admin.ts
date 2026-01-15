@@ -121,18 +121,22 @@ export async function fetchBookDetailAdmin(bookId: string): Promise<BookAdmin> {
 /**
  * Tạo sách mới (Admin)
  */
-export async function createBookAdmin(bookData: BookCreateData): Promise<BookAdmin> {
+export async function createBookAdmin(formData: FormData): Promise<BookAdmin> {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}/api/admin/books/`, {
     method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(bookData),
+    headers: {
+      // KHÔNG set Content-Type là application/json
+      // Để browser tự set multipart/form-data boundary
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: formData,
   });
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.detail || 'Tạo sách thất bại');
   }
-
   return response.json();
 }
 
@@ -141,19 +145,21 @@ export async function createBookAdmin(bookData: BookCreateData): Promise<BookAdm
  */
 export async function updateBookAdmin(
   bookId: string,
-  bookData: BookUpdateData
+  formData: FormData
 ): Promise<BookAdmin> {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}/api/admin/books/${bookId}`, {
     method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(bookData),
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: formData,
   });
 
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.detail || 'Cập nhật sách thất bại');
   }
-
   return response.json();
 }
 

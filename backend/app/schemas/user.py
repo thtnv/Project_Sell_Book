@@ -10,6 +10,7 @@ class RegisterUserSchema(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
 
+    otp: str = Field(..., min_length=6, max_length=6)
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -22,6 +23,10 @@ class RegisterResponseSchema(BaseModel):
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OtpRequest(BaseModel):
+    email: EmailStr
 
 
 class LoginSchema(BaseModel):

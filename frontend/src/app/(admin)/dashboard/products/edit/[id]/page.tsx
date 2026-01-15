@@ -24,7 +24,7 @@ export default function EditBookPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState<CategoryAdmin[]>([]);
-  
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<BookUpdateData>({});
 
   // Load book and categories
@@ -60,7 +60,7 @@ export default function EditBookPage() {
         if (bookData.cover_image_url) {
           const imageUrl = bookData.cover_image_url.startsWith('http') 
             ? bookData.cover_image_url 
-            : `/books/${bookData.cover_image_url}`;
+            : `/books/${bookData.cover_image_url}`; // Dùng đường dẫn tương đối
           setPreview(imageUrl);
         }
       } catch (err) {
@@ -86,14 +86,13 @@ export default function EditBookPage() {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPreview(reader.result as string);
       reader.readAsDataURL(file);
-      
-      setFormData(prev => ({ ...prev, cover_image_url: file.name }));
     }
   };
 
@@ -103,7 +102,23 @@ export default function EditBookPage() {
     setSubmitting(true);
 
     try {
-      await updateBookAdmin(bookId, formData);
+      const payload = new FormData();
+      // Append các trường nếu có thay đổi hoặc muốn gửi lại
+      if(formData.title) payload.append("title", formData.title);
+      if(formData.author) payload.append("author", formData.author);
+      if(formData.price) payload.append("price", formData.price.toString());
+      if(formData.category_id) payload.append("category_id", formData.category_id);
+      if(formData.stock_quantity !== undefined) payload.append("stock_quantity", formData.stock_quantity.toString());
+      if(formData.publisher) payload.append("publisher", formData.publisher);
+      if(formData.publication_year) payload.append("publication_year", formData.publication_year.toString());
+      if(formData.description) payload.append("description", formData.description);
+
+      // Nếu có chọn ảnh mới thì gửi lên
+      if (selectedFile) {
+        payload.append("file", selectedFile);
+      }
+
+      await updateBookAdmin(bookId, payload);
       alert("Cập nhật sách thành công!");
       router.push('/dashboard/products');
     } catch (err) {

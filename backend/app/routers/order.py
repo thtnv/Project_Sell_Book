@@ -313,7 +313,11 @@ async def get_all_orders_admin(
 
         total = db.execute(count_stmt).scalar()
 
-        stmt = stmt.order_by(desc(Order.created_at)).offset(skip).limit(limit)
+        stmt = (
+            stmt.order_by(Order.status_id.asc(), desc(Order.created_at))
+            .offset(skip)
+            .limit(limit)
+        )
         result = db.execute(stmt)
         orders = result.scalars().unique().all()
 

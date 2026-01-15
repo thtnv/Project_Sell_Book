@@ -175,11 +175,15 @@ export default function UserManagementPage() {
                     <td className="px-4 py-4 whitespace-nowrap">{user.phone || 'N/A'}</td>
                     <td className="px-4 py-4 text-left max-w-50 truncate">{user.address || 'N/A'}</td>
                     <td className="px-4 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                        user.role === 'admin' 
-                          ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
-                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center justify-center
+                          w-[90px] h-[26px]
+                          rounded-full text-[10px] font-bold uppercase
+                          ${user.role === 'admin'
+                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                            : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          }`}
+                      >
                         {user.role}
                       </span>
                     </td>

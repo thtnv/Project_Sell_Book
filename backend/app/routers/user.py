@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin
@@ -12,12 +12,16 @@ from app.schemas.user import (
     LoginSchema,
     ChangePasswordSchema,
     TokenSchema,
+    OtpRequest,
 )
 from app.schemas.user_profile import UserProfileUpdate, UserProfileResponse
 from app.core.security import create_access_token, get_password_hash
 from app.schemas.user import SocialLoginRequest, TokenSchema
+from app.services.email import send_otp_email
 import requests
 import os
+import random
+import string
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,32 +42,72 @@ def generate_user_id(db: Session):
     return f"U{new_number:03d}"
 
 
+# [THÊM MỚI]: Kho chứa OTP trong RAM (Dictionary)
+# Cấu trúc: { "email@gmail.com": { "code": "123456", "expires_at": datetime } }
+otp_storage = {}
+
+
+@router.post("/send-otp")
+async def send_registration_otp(request: OtpRequest, db: Session = Depends(get_db)):
+    """Gửi mã OTP qua email"""
+    email = request.email
+
+    # Kiểm tra email đã tồn tại trong DB chưa
+    stmt = select(User).where(User.email == email)
+    if db.execute(stmt).scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email đã được sử dụng")
+
+    # Tạo mã OTP 6 số
+    otp_code = "".join(random.choices(string.digits, k=6))
+
+    # Lưu vào RAM với thời hạn 5 phút
+    otp_storage[email] = {
+        "code": otp_code,
+        "expires_at": datetime.utcnow() + timedelta(minutes=5),
+    }
+
+    # Gửi email
+    if send_otp_email(email, otp_code):
+        return {"message": "Mã OTP đã được gửi đến email của bạn"}
+    else:
+        raise HTTPException(status_code=500, detail="Không thể gửi email OTP")
+
+
 @router.post(
     "/register",
     response_model=RegisterResponseSchema,
     status_code=status.HTTP_201_CREATED,
 )
 async def register_user(user_data: RegisterUserSchema, db: Session = Depends(get_db)):
-    """Đăng ký tài khoản mới"""
-    # Kiểm tra email tồn tại
-    stmt = select(User).where(User.email == user_data.email)
-    exist_user = db.execute(stmt).scalar_one_or_none()
-    if exist_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email đã tồn tại"
-        )
+    """Đăng ký tài khoản mới (Có kiểm tra OTP)"""
 
-    # Kiểm tra số điện thoại
+    # 1. Kiểm tra OTP
+    stored_otp = otp_storage.get(user_data.email)
+
+    if not stored_otp:
+        raise HTTPException(status_code=400, detail="Vui lòng yêu cầu gửi mã OTP trước")
+
+    if datetime.utcnow() > stored_otp["expires_at"]:
+        del otp_storage[user_data.email]  # Xóa OTP hết hạn
+        raise HTTPException(status_code=400, detail="Mã OTP đã hết hạn")
+
+    if stored_otp["code"] != user_data.otp:
+        raise HTTPException(status_code=400, detail="Mã OTP không chính xác")
+
+    # 2. OTP Đúng -> Xóa khỏi RAM để không dùng lại được
+    del otp_storage[user_data.email]
+
+    # 3. Logic đăng ký cũ (Kiểm tra email/phone trùng lặp lần cuối)
+    stmt = select(User).where(User.email == user_data.email)
+    if db.execute(stmt).scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email đã tồn tại")
+
     if user_data.phone:
         stmt = select(User).where(User.phone == user_data.phone)
-        exist_phone = db.execute(stmt).scalar_one_or_none()
-        if exist_phone:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Số điện thoại đã được sử dụng",
-            )
+        if db.execute(stmt).scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Số điện thoại đã được sử dụng")
 
-    # Tạo user mới
+    # 4. Lưu User vào MySQL (Code cũ giữ nguyên)
     import uuid
 
     new_user_id = generate_user_id(db)

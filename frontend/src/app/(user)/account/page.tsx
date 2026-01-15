@@ -379,7 +379,7 @@ const handleChangePassword = async () => {
           <div className="lg:col-span-8">
             <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-100 min-h-125 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex justify-between items-center border-b border-slate-50 pb-4 mb-6">
-                <h2 className="text-emerald-600 text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <h2 className="text-emerald-600 text-sm font-black font-semibold uppercase tracking-widest flex items-center gap-2">
                   <PackageOpen size={20} /> Lịch sử đơn hàng ({totalOrders})
                 </h2>
                 

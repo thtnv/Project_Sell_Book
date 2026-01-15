@@ -60,28 +60,39 @@ export default function OrderManagementPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      processing: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/50",
-      confirmed: "bg-blue-500/20 text-blue-400 border border-blue-500/50",
-      shipping: "bg-purple-500/20 text-purple-400 border border-purple-500/50",
-      completed: "bg-green-500/20 text-green-400 border border-green-500/50",
-      cancelled: "bg-red-500/20 text-red-400 border border-red-500/50",
-    };
-    const labels: Record<string, string> = {
-      processing: "Chờ xử lý",
-      confirmed: "Đang xử lý",
-      shipping: "Đang giao",
-      completed: "Đã giao",
-      cancelled: "Đã hủy"
-    };
-    return (
-      // [FIX 1]: Thêm whitespace-nowrap để chữ không bị xuống dòng
-      <span className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap inline-block ${styles[status] || 'bg-gray-500/20 text-gray-400'}`}>
-        {labels[status] || status}
-      </span>
-    );
+const getStatusBadge = (status: string) => {
+  const styles: Record<string, string> = {
+    processing: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
+    confirmed: "bg-blue-500/20 text-blue-400 border-blue-500/50",
+    shipping: "bg-purple-500/20 text-purple-400 border-purple-500/50",
+    completed: "bg-green-500/20 text-green-400 border-green-500/50",
+    cancelled: "bg-red-500/20 text-red-400 border-red-500/50",
   };
+
+  const labels: Record<string, string> = {
+    processing: "Chờ xử lý",
+    confirmed: "Đang xử lý",
+    shipping: "Đang giao",
+    completed: "Đã giao",
+    cancelled: "Đã hủy",
+  };
+
+  return (
+    <span
+      className={`
+        inline-flex items-center justify-center
+        w-28 h-8
+        text-xs font-bold
+        rounded-full
+        border
+        whitespace-nowrap
+        ${styles[status] || "bg-gray-500/20 text-gray-400 border-gray-500/50"}
+      `}
+    >
+      {labels[status] || status}
+    </span>
+  );
+};
 
   const renderActionButtons = (order: Order) => {
     const { order_id, order_status } = order;
@@ -200,16 +211,24 @@ export default function OrderManagementPage() {
                     <td className="px-6 py-4 font-bold text-emerald-400">{order.total_amount.toLocaleString('vi-VN')}₫</td>
                     <td className="px-6 py-4">{getStatusBadge(order.order_status)}</td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-center items-center gap-3">
-                        <Link 
-                          href={`/dashboard/orders/${order.order_id}`} 
-                          className="bg-blue-500/20 text-blue-400 p-2 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-lg" 
-                          title="Chi tiết"
-                        >
-                          <Eye size={16} />
-                        </Link>
+                      <div className="flex items-center justify-center gap-3">
                         
-                        {renderActionButtons(order)}
+                        {/* Eye icon – FIXED WIDTH */}
+                        <div className="w-10 flex justify-center">
+                          <Link
+                            href={`/dashboard/orders/${order.order_id}`}
+                            className="bg-blue-500/20 text-blue-400 p-2 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-lg"
+                            title="Chi tiết"
+                          >
+                            <Eye size={16} />
+                          </Link>
+                        </div>
+
+                        {/* Action buttons – FLEXIBLE */}
+                        <div className="min-w-[120px] flex justify-center">
+                          {renderActionButtons(order)}
+                        </div>
+
                       </div>
                     </td>
                   </tr>

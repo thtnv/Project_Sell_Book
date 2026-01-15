@@ -15,6 +15,7 @@ export default function AddBookPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState<CategoryAdmin[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState<BookCreateData>({
     title: "",
@@ -56,14 +57,15 @@ export default function AddBookPage() {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file); // Lưu file để gửi đi
+      
+      // Tạo preview
       const reader = new FileReader();
       reader.onloadend = () => setPreview(reader.result as string);
       reader.readAsDataURL(file);
-      
-      setFormData(prev => ({ ...prev, cover_image_url: file.name }));
     }
   };
 
@@ -73,11 +75,24 @@ export default function AddBookPage() {
     setLoading(true);
 
     try {
-      if (!formData.title || !formData.author || !formData.category_id) {
-        throw new Error("Vui lòng điền đầy đủ thông tin bắt buộc");
+      // Tạo FormData
+      const payload = new FormData();
+      payload.append("title", formData.title);
+      payload.append("author", formData.author);
+      payload.append("category_id", formData.category_id);
+      payload.append("price", formData.price.toString());
+      payload.append("stock_quantity", (formData.stock_quantity || 0).toString());
+      
+      if (formData.publisher) payload.append("publisher", formData.publisher);
+      if (formData.publication_year) payload.append("publication_year", formData.publication_year.toString());
+      if (formData.description) payload.append("description", formData.description);
+
+      // Quan trọng: Append file
+      if (selectedFile) {
+        payload.append("file", selectedFile);
       }
 
-      await createBookAdmin(formData);
+      await createBookAdmin(payload); // Gửi FormData
       alert("Thêm sách thành công!");
       router.push('/dashboard/products');
     } catch (err) {

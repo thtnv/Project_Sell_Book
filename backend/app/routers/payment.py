@@ -11,6 +11,8 @@ from app.models.order import Order
 from app.models.order_detail import OrderDetail
 
 router = APIRouter(prefix="/payment", tags=["Payment"])
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +54,6 @@ async def stripe_webhook(
                     .where(Order.order_id == order_id)
                 )
 
-                # [FIX 1]: Thêm .unique() trước khi gọi .scalar_one_or_none()
                 order = db.execute(stmt).unique().scalar_one_or_none()
 
                 if not order:
@@ -78,19 +79,32 @@ async def stripe_webhook(
                     "payment_method_id": order.payment_method_id,
                 }
 
-                # Send Confirmation Email
-                logger.info(f"📧 Sending email to {order.user.email}...")
-                send_result = send_order_confirmation_email(
-                    order.user.email, order.user.full_name, order_id, email_payload
-                )
+                # ================= LOG WEBHOOK =================
+                logger.info("========== WEBHOOK SEND MAIL ==========")
+                logger.info(f"Webhook triggered by event: {event['type']}")
+                logger.info(f"Send mail to: {order.user.email}")
 
-                if send_result:
-                    logger.info("✅ Email sent successfully.")
-                else:
-                    logger.error("❌ Failed to send email function returned False.")
+                try:
+                    send_result = send_order_confirmation_email(
+                        order.user.email,
+                        order.user.full_name,
+                        order_id,
+                        email_payload,
+                    )
 
-                # [FIX 2]: Xóa dòng console.log (Cú pháp JS sai trong Python)
-                # console.log(send_result)
+                    logger.info(
+                        f"send_order_confirmation_email() returned: {send_result}"
+                    )
+
+                    if send_result:
+                        logger.info("✅ Email sent successfully.")
+                    else:
+                        logger.error("❌ Email function returned False.")
+
+                except Exception as e:
+                    logger.exception(
+                        "❌ Exception when calling send_order_confirmation_email"
+                    )
 
             except Exception as e:
                 logger.error(f"❌ Error processing webhook logic: {str(e)}")

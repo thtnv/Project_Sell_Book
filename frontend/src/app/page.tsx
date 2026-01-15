@@ -16,13 +16,15 @@ export default function HomePage() {
   const [books, setBooks] = useState<BookList[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<BookFilter>("Tất cả");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Load books based on filter
-  const loadBooks = async (filter: BookFilter) => {
+  const loadBooks = async (filter: BookFilter, search: string) => {
     try {
       setLoading(true);
-      const data = await fetchBookList(filter);
+      // Gọi API với cả filter và search
+      const data = await fetchBookList(filter, search);
       setBooks(data);
     } catch (error) {
       console.error("Error loading books:", error);
@@ -30,30 +32,33 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-
   const { user } = useAuth(); // Lấy user để check provider
   
   // Initial load
   useEffect(() => {
-    loadBooks(activeFilter);
+    loadBooks(activeFilter, searchTerm);
     const shouldShowAlert = localStorage.getItem('showProfileAlert');
-    
-    // [FIX LỖI 2]: Chỉ hiện Modal nếu là User Social (không phải local)
     if (shouldShowAlert === 'true' && user && (user as any).auth_provider !== 'local') {
       setShowProfileModal(true);
       localStorage.removeItem('showProfileAlert');
     }
-  }, [activeFilter, user]);
+  }, [activeFilter, searchTerm, user]);
 
   // Handle filter change
   const handleFilterChange = (filter: BookFilter) => {
     setActiveFilter(filter);
   };
 
+  const handleSearch = (keyword: string) => {
+    setSearchTerm(keyword);
+    // Khi search, có thể muốn reset filter về "Tất cả" hoặc giữ nguyên
+    // Ở đây tôi giữ nguyên filter hiện tại
+  };
+
   return (
     <main>
       <Header/>
-      <Hero tuKhoa="" />
+      <Hero onSearch={handleSearch}/>
 
       <section className="bg-[#f2fbf7] pt-5 pb-24 relative">
         <div className="container mx-auto px-4">       
@@ -85,7 +90,7 @@ export default function HomePage() {
               </p>
             ) : books.length > 0 ? (
               books.map((book) => (
-                <BookCard
+                <BookCard 
                   key={book.book_id}
                   id={book.book_id}
                   title={book.title}
@@ -95,8 +100,10 @@ export default function HomePage() {
                 />
               ))
             ) : (
-              <p className="text-center col-span-full text-slate-500">
-                Không tìm thấy sách nào.
+              <p className="text-center col-span-full text-slate-500 py-10">
+                {searchTerm 
+                  ? `Không tìm thấy sách nào cho từ khóa "${searchTerm}".` 
+                  : "Không tìm thấy sách nào."}
               </p>
             )}
           </div>

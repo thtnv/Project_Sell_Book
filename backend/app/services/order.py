@@ -31,7 +31,8 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
 def generate_order_id(db: Session) -> str:
-    stmt = select(Order).order_by(Order.created_at.desc())
+    stmt = select(Order).order_by(Order.order_id.desc())
+
     last_order = db.execute(stmt).scalars().first()
     if not last_order:
         return "O001"
@@ -39,6 +40,9 @@ def generate_order_id(db: Session) -> str:
         new_num = int(last_order.order_id[1:]) + 1
         return f"O{new_num:03d}"
     except:
+        # Fallback an toàn
+        import uuid
+
         return f"O{str(uuid.uuid4().int)[:8]}"
 
 

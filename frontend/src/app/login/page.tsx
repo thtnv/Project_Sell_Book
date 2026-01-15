@@ -142,7 +142,7 @@ const LoginPage = () => {
 
       {/* Header Section */}
       <div className="login-header-compact text-center mb-6 z-10 animate-fade-down">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#0F9D58] mb-1 drop-shadow-sm font-quicksand px-4">
+        <h1 className="text-2xl md:text-3xl font-semibold  text-[#0F9D58] mb-1 drop-shadow-sm font-quicksand px-4">
           Chào mừng bạn đến với nhà sách UTE!
         </h1>
         <p className="text-gray-600 font-semibold text-sm">

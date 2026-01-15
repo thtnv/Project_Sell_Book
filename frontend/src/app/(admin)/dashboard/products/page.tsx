@@ -75,10 +75,12 @@ export default function AdminProductManagement() {
     }
   };
 
-  const getImageUrl = (image: string | null) => {
-    if (!image) return "/books/default-book.png";
-    if (image.startsWith("http")) return image;
-    return `/books/${image}`;
+const getImageUrl = (image: string | null) => {
+    if (!image) return "/books/book-default.jpg"; // Ảnh mặc định
+    if (image.startsWith("http")) return image;   // Ảnh online
+    
+    // [SỬA]: Trỏ trực tiếp vào thư mục public của Next.js
+    return `/books/${image}`; 
   };
 
   if (loading) {

@@ -103,7 +103,7 @@ const CartPage = () => {
         {/* Header Section */}
         <div className="relative bg-linear-to-br from-[#ccfbf1]/95 to-[#e0f2fe]/95 pt-16 pb-24 text-center overflow-hidden">
           <div className="container mx-auto px-4 relative z-10">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-[#333] mb-4 font-quicksand">
+            <h1 className="text-4xl md:text-5xl font-semibold text-[#333] mb-4 font-quicksand">
               Giỏ Hàng Của Bạn
             </h1>
             <nav className="flex justify-center space-x-2 text-sm text-gray-500 font-medium">
