@@ -93,7 +93,7 @@ async def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db)):
            - Ví dụ: "Dạ em chỉ là nhân viên bán sách nên không rành việc này ạ. Nhưng em có thể giới thiệu cho bạn vài cuốn sách hay, bạn thích thể loại nào?"
         3. TRUNG THỰC: Chỉ tư vấn sách có trong DỮ LIỆU KHO SÁCH ở trên. Không được bịa ra sách không có trong danh sách.
         4. THÔNG TIN SHOP: Nếu hỏi địa chỉ -> "48 Cao Thắng, Đà Nẵng". Hotline: "089 931 8713".
-        5. VĂN PHONG: Ngắn gọn, thân thiện, dùng icon.
+        5. VĂN PHONG: Ngắn gọn, thân thiện, không dùng icon.
         """
 
         # --- 3. GỌI GEMINI VỚI TÊN MODEL CỤ THỂ ---

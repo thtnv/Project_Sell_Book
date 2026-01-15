@@ -11,8 +11,6 @@ from app.models.order import Order
 from app.models.order_detail import OrderDetail
 
 router = APIRouter(prefix="/payment", tags=["Payment"])
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -40,11 +38,10 @@ async def stripe_webhook(
         order_id = session.get("metadata", {}).get("order_id")
 
         if order_id:
-            logger.info(
-                f"💰 Payment successful for order {order_id}. Processing email..."
-            )
+            logger.info(f"💰 Webhook received for Order: {order_id}")
 
             try:
+                # 1. Tìm đơn hàng
                 stmt = (
                     select(Order)
                     .options(
@@ -53,19 +50,23 @@ async def stripe_webhook(
                     )
                     .where(Order.order_id == order_id)
                 )
-
                 order = db.execute(stmt).unique().scalar_one_or_none()
 
                 if not order:
-                    logger.error(f"Order {order_id} not found in database!")
+                    logger.error(f"Order {order_id} not found!")
                     return {"status": "error", "detail": "Order not found"}
 
-                # Construct email payload
+                # [ĐÃ XÓA]: Đoạn cập nhật order.payment_status gây lỗi
+                # Vì bạn không muốn dùng cột này, chúng ta bỏ qua bước update DB.
+                # Đơn hàng vẫn giữ nguyên trạng thái ban đầu (processing) từ lúc tạo.
+
+                # 2. Chuẩn bị dữ liệu gửi mail
                 email_items = []
                 for d in order.order_details:
+                    title = d.book.title if d.book else "Sách đã bị xóa"
                     email_items.append(
                         {
-                            "title": (d.book.title if d.book else "Sách đã bị xóa"),
+                            "title": title,
                             "quantity": d.quantity,
                             "price": float(d.unit_price),
                         }
@@ -73,41 +74,28 @@ async def stripe_webhook(
 
                 email_payload = {
                     "items": email_items,
-                    "subtotal": float(order.total_amount) - 30000,
+                    "subtotal": float(order.total_amount) - 30000,  # Giả sử ship 30k
                     "total_amount": float(order.total_amount),
                     "shipping_address": order.shipping_address,
                     "payment_method_id": order.payment_method_id,
                 }
 
-                # ================= LOG WEBHOOK =================
-                logger.info("========== WEBHOOK SEND MAIL ==========")
-                logger.info(f"Webhook triggered by event: {event['type']}")
-                logger.info(f"Send mail to: {order.user.email}")
-
-                try:
+                # 3. Gửi Email
+                if order.user and order.user.email:
+                    logger.info(f"📧 Sending email to {order.user.email}...")
                     send_result = send_order_confirmation_email(
-                        order.user.email,
-                        order.user.full_name,
-                        order_id,
-                        email_payload,
-                    )
-
-                    logger.info(
-                        f"send_order_confirmation_email() returned: {send_result}"
+                        order.user.email, order.user.full_name, order_id, email_payload
                     )
 
                     if send_result:
                         logger.info("✅ Email sent successfully.")
                     else:
-                        logger.error("❌ Email function returned False.")
-
-                except Exception as e:
-                    logger.exception(
-                        "❌ Exception when calling send_order_confirmation_email"
-                    )
+                        logger.error("❌ Failed to send email.")
+                else:
+                    logger.warning("⚠️ User email not found.")
 
             except Exception as e:
-                logger.error(f"❌ Error processing webhook logic: {str(e)}")
+                logger.error(f"❌ Error logic webhook: {str(e)}")
                 return {"status": "error", "detail": str(e)}
 
     return {"status": "success"}
