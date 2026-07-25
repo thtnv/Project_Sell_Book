@@ -13,19 +13,34 @@ Hệ thống quản lý bán sách trực tuyến với đầy đủ chức năn
 1. Mở MySQL/phpMyAdmin, tạo một database mới:
    ```sql
    CREATE DATABASE book_management;
-# Phần backend
- - bước 1 : python -m venv venv ( nếu đã có venv thì chuyển sang bước 2 )
- - bước 2 :  .\venv\Scripts\Activate.ps1
- - bước 3 : pip install -r requirements.txt
- - bước 4 :  uvicorn app.main:app --reload
+### 2. Phần backend
+# Bước 1: Tạo môi trường ảo (Virtual Environment) ( nếu đã có venv thì chuyển sang bước 2 )
+python -m venv venv 
+
+# Bước 2: Kích hoạt môi trường ảo
+# Trên Windows:
+.\venv\Scripts\Activate.ps1
+# Trên macOS/Linux:
+source venv/bin/activate
+
+# Bước 3: Cài đặt thư viện
+pip install -r requirements.txt
+
+# Bước 4: Tạo file .env và cấu hình Database URL (Dựa theo file .env.example)
+
+# Bước 5: Khởi chạy server
+uvicorn app.main:app --reload
 
 ## Mỗi lần cài đặt thư viện mới ( pip install ... ) thì thêm bước chạy lệnh pip freeze > requirements.txt để cập nhập thư viện trong file requirement.txt
 
-# Phần frontend
- - chạy npm run dev
+### 3. Phần frontend
+# Cài đặt các dependencies
+npm install
 
+# Khởi chạy giao diện
+npm run dev
 
-##  Database
+###  Database
 -- 1. Users Table (Auth & Authorization)
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
