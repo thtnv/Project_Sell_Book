@@ -40,7 +40,7 @@ npm install
 # Khởi chạy giao diện
 npm run dev
 
-###  Database
+###  Cấu trúc Database (Schema)
 -- 1. Users Table (Auth & Authorization)
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
