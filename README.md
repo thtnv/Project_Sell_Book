@@ -13,7 +13,7 @@ Hệ thống quản lý bán sách trực tuyến với đầy đủ chức năn
 1. Mở MySQL/phpMyAdmin, tạo một database mới:
    ```sql
    CREATE DATABASE book_management;
-### 2. Phần backend
+### 2. Cấu hình Backend (FastAPI)
 # Bước 1: Tạo môi trường ảo (Virtual Environment) ( nếu đã có venv thì chuyển sang bước 2 )
 python -m venv venv 
 
@@ -33,7 +33,7 @@ uvicorn app.main:app --reload
 
 ## Mỗi lần cài đặt thư viện mới ( pip install ... ) thì thêm bước chạy lệnh pip freeze > requirements.txt để cập nhập thư viện trong file requirement.txt
 
-### 3. Phần frontend
+### 3. Cấu hình Frontend (Next.js)
 # Cài đặt các dependencies
 npm install
 
