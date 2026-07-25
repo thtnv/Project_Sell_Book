@@ -1,3 +1,18 @@
+# Book Sales Management System
+
+Hệ thống quản lý bán sách trực tuyến với đầy đủ chức năng cho Khách hàng (Customer) và Quản trị viên (Admin). 
+
+## Tech Stack
+- **Frontend:** Next.js, Tailwind CSS
+- **Backend:** Python (FastAPI)
+- **Database:** MySQL
+
+## Hướng dẫn cài đặt
+
+### 1. Cài đặt Database (MySQL)
+1. Mở MySQL/phpMyAdmin, tạo một database mới:
+   ```sql
+   CREATE DATABASE book_management;
 # Phần backend
  - bước 1 : python -m venv venv ( nếu đã có venv thì chuyển sang bước 2 )
  - bước 2 :  .\venv\Scripts\Activate.ps1
