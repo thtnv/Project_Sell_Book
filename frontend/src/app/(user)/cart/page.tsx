@@ -26,12 +26,11 @@ const CartPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { items, itemCount, totalAmount, removeFromCart, updateQuantity, clearCart } = useCart();
   
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
+  const [appliedCoupon] = useState<{ code: string; percent: number } | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  
+
   const [paymentMethod, setPaymentMethod] = useState<'PM001' | 'PM002'>('PM001');
   const [shippingAddress, setShippingAddress] = useState(user?.address || "");
   
@@ -47,15 +46,6 @@ const CartPage = () => {
     }
   };
 
-  const handleApplyCoupon = () => {
-    if (couponCode === "SALE10") {
-      setAppliedCoupon({ code: "SALE10", percent: 10 });
-      setError("");
-    } else if (couponCode) {
-      setError("Mã giảm giá không hợp lệ");
-      setAppliedCoupon(null);
-    }
-  };
 
   const handleCheckout = async () => {
     if (!isAuthenticated || !user) {
@@ -113,7 +103,7 @@ const CartPage = () => {
         {/* Header Section */}
         <div className="relative bg-linear-to-br from-[#ccfbf1]/95 to-[#e0f2fe]/95 pt-16 pb-24 text-center overflow-hidden">
           <div className="container mx-auto px-4 relative z-10">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-[#333] mb-4 font-quicksand">
+            <h1 className="text-4xl md:text-5xl font-semibold text-[#333] mb-4 font-quicksand">
               Giỏ Hàng Của Bạn
             </h1>
             <nav className="flex justify-center space-x-2 text-sm text-gray-500 font-medium">
@@ -208,30 +198,6 @@ const CartPage = () => {
                   </table>
                 </div>
               </div>
-
-              {/* Coupon Section */}
-              {items.length > 0 && (
-                <div className="bg-white rounded-[20px] shadow-[0_10px_30px_rgba(15,157,88,0.1)] p-6">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <input 
-                      type="text" 
-                      placeholder="Mã giảm giá"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="grow bg-gray-50 border border-gray-100 rounded-xl px-5 py-3 focus:outline-none focus:border-[#0F9D58] transition-all"
-                    />
-                    <button 
-                      onClick={handleApplyCoupon}
-                      className="px-8 py-3 border-2 border-[#0F9D58] text-[#0F9D58] font-bold rounded-full hover:bg-[#0F9D58] hover:text-white transition-all"
-                    >
-                      Áp dụng
-                    </button>
-                  </div>
-                  {appliedCoupon && (
-                    <p className="text-sm text-green-600 mt-2">✓ Đã áp dụng mã {appliedCoupon.code}</p>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Order Summary */}

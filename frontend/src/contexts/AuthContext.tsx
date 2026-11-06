@@ -13,6 +13,31 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+function normalizeUser(
+  user: Partial<UserInfo> & { full_name?: string }
+): UserInfo {
+  return {
+    ...user,
+    fullname: user.fullname || user.full_name || "",
+  } as UserInfo;
+}
+
+// Helper: Lấy auth_provider đang lưu trong localStorage
+const getSavedAuthProvider = (): string => {
+  if (typeof window === 'undefined') return 'local';
+  try {
+    const savedStr = localStorage.getItem('user_info');
+    if (savedStr) {
+      const savedUser = JSON.parse(savedStr);
+      return savedUser.auth_provider || 'local';
+    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return 'local';
+  }
+  return 'local';
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -29,14 +54,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // [FIX]: Lấy provider cũ trước khi gọi API
+      const savedProvider = getSavedAuthProvider();
+
       // Try to verify token with API
       const verifiedUser = await verifyToken();
+      
       if (verifiedUser) {
-        setUser(verifiedUser);
+        const normalized = normalizeUser(verifiedUser);
+        // [FIX]: Gộp provider cũ vào data mới từ API
+        setUser({ ...normalized, auth_provider: savedProvider } as any);
       } else {
         // Token invalid, get from localStorage as fallback
         const localUser = getCurrentUser();
-        setUser(localUser);
+        setUser(localUser ? normalizeUser(localUser) : null);
       }
       
       setIsLoading(false);
@@ -73,7 +104,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, isLoading, pathname, router]);
 
   const login = (userData: UserInfo) => {
-    setUser(userData);
+    // 1. Lấy auth_provider từ dữ liệu truyền vào (ưu tiên)
+    let provider = (userData as any).auth_provider;
+
+    // 2. Nếu không có trong dữ liệu truyền vào, thử lấy từ localStorage
+    if (!provider) {
+        provider = getSavedAuthProvider();
+    }
+
+    // 3. Nếu vẫn không có, mặc định là 'local' (cho trường hợp đăng nhập thường)
+    if (!provider) {
+        provider = 'local';
+    }
+
+    // 4. Tạo object user hoàn chỉnh
+    const updatedUser = {
+        ...userData,
+        auth_provider: provider
+    };
+
+    // 5. Cập nhật State
+    setUser(updatedUser);
+
+    // 6. Cập nhật luôn localStorage để đồng bộ (nếu chưa có)
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('user_info', JSON.stringify(updatedUser));
+    }
   };
 
   const logout = () => {
@@ -85,13 +141,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     console.log("🔄 Refreshing user...");
     try {
+      // [FIX]: Lấy provider cũ trước khi gọi API (để tránh bị mất khi update)
+      const savedProvider = getSavedAuthProvider();
+
       const verifiedUser = await verifyToken();
       if (verifiedUser) {
         console.log("✅ User refreshed:", verifiedUser);
-        setUser(verifiedUser);
-        // Cập nhật localStorage
+        const normalized = normalizeUser(verifiedUser);
+        
+        // [FIX]: Gộp provider vào object user mới
+        const userWithProvider = { 
+            ...normalized, 
+            auth_provider: savedProvider 
+        };
+
+        setUser(userWithProvider as any);
+
         if (typeof window !== 'undefined') {
-          localStorage.setItem('user_info', JSON.stringify(verifiedUser));
+          // Lưu lại bản đầy đủ (có auth_provider) vào localStorage
+          localStorage.setItem('user_info', JSON.stringify(userWithProvider));
         }
       } else {
         console.log("⚠️ Cannot verify user, logging out");

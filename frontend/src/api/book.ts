@@ -25,9 +25,15 @@ export interface BookDetail{
 // Thêm type cho filter
 export type BookFilter = "Tất cả" | "Sách hot" | "Xu hướng";
 
-export async function fetchBookList(filter: BookFilter = "Tất cả"): Promise<BookList[]> {
+// [SỬA]: Thêm tham số search (optional)
+export async function fetchBookList(filter: BookFilter = "Tất cả", search: string = ""): Promise<BookList[]> {
     const params = new URLSearchParams();
     params.append('filter', filter);
+    
+    // Nếu có từ khóa tìm kiếm thì thêm vào params
+    if (search) {
+        params.append('search', search);
+    }
     
     const response = await fetch(`${API_BASE_URL}/api/books?${params.toString()}`, {
         method: 'GET',

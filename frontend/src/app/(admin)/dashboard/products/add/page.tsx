@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, PlusCircle, Upload, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { createBookAdmin, BookCreateData } from '@/api/admin/book_admin';
+import { fetchCategoriesAdmin, CategoryAdmin } from '@/api/admin/category_admin';
 
 export default function AddBookPage() {
   const router = useRouter();
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState<CategoryAdmin[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState<BookCreateData>({
     title: "",
@@ -25,6 +29,24 @@ export default function AddBookPage() {
     cover_image_url: ""
   });
 
+  // Load categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await fetchCategoriesAdmin(0, 100);
+        setCategories(response.categories);
+      } catch (err) {
+        console.error("Error loading categories:", err);
+        setError("Không thể tải danh sách thể loại");
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -35,14 +57,15 @@ export default function AddBookPage() {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file); // Lưu file để gửi đi
+      
+      // Tạo preview
       const reader = new FileReader();
       reader.onloadend = () => setPreview(reader.result as string);
       reader.readAsDataURL(file);
-      
-      setFormData(prev => ({ ...prev, cover_image_url: file.name }));
     }
   };
 
@@ -52,11 +75,24 @@ export default function AddBookPage() {
     setLoading(true);
 
     try {
-      if (!formData.title || !formData.author || !formData.category_id) {
-        throw new Error("Vui lòng điền đầy đủ thông tin bắt buộc");
+      // Tạo FormData
+      const payload = new FormData();
+      payload.append("title", formData.title);
+      payload.append("author", formData.author);
+      payload.append("category_id", formData.category_id);
+      payload.append("price", formData.price.toString());
+      payload.append("stock_quantity", (formData.stock_quantity || 0).toString());
+      
+      if (formData.publisher) payload.append("publisher", formData.publisher);
+      if (formData.publication_year) payload.append("publication_year", formData.publication_year.toString());
+      if (formData.description) payload.append("description", formData.description);
+
+      // Quan trọng: Append file
+      if (selectedFile) {
+        payload.append("file", selectedFile);
       }
 
-      await createBookAdmin(formData);
+      await createBookAdmin(payload); // Gửi FormData
       alert("Thêm sách thành công!");
       router.push('/dashboard/products');
     } catch (err) {
@@ -142,18 +178,27 @@ export default function AddBookPage() {
                   <label className="block text-gray-300 font-semibold mb-2">
                     Thể Loại <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="category_id"
-                    value={formData.category_id}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-teal-400"
-                    required
-                  >
-                    <option value="">-- Chọn thể loại --</option>
-                    <option value="CAT001">Công nghệ thông tin</option>
-                    <option value="CAT002">Kinh tế</option>
-                    <option value="CAT003">Văn học</option>
-                  </select>
+                  {categoriesLoading ? (
+                    <div className="flex items-center justify-center py-3 bg-gray-700 rounded-lg">
+                      <Loader2 className="animate-spin text-teal-400" size={20} />
+                      <span className="ml-2 text-gray-400">Đang tải...</span>
+                    </div>
+                  ) : (
+                    <select
+                      name="category_id"
+                      value={formData.category_id}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-teal-400"
+                      required
+                    >
+                      <option value="">-- Chọn thể loại --</option>
+                      {categories.map((cat) => (
+                        <option key={cat.category_id} value={cat.category_id}>
+                          {cat.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div>
@@ -225,7 +270,7 @@ export default function AddBookPage() {
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
               <button 
                 type="submit"
-                disabled={loading}
+                disabled={loading || categoriesLoading}
                 className="px-10 py-4 bg-teal-500 hover:bg-teal-600 text-gray-900 font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (

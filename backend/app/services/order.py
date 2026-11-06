@@ -6,6 +6,8 @@ from fastapi import HTTPException
 from datetime import datetime
 import uuid
 import logging
+import stripe
+import os
 
 from app.models.order import Order
 from app.models.order_detail import OrderDetail
@@ -16,85 +18,211 @@ from app.models.payment_method import PaymentMethod
 from app.models.order_status import OrderStatus
 from app.models.user import User
 from app.schemas.order import OrderCreate
-from app.services.email import send_order_confirmation_email, send_order_status_update_email
+from app.services.email import (
+    send_order_confirmation_email,
+    send_order_status_update_email,
+)
 
 logger = logging.getLogger(__name__)
 
+
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+
 def generate_order_id(db: Session) -> str:
-    stmt = select(Order).order_by(Order.created_at.desc())
+    stmt = select(Order).order_by(Order.order_id.desc())
+
     last_order = db.execute(stmt).scalars().first()
-    if not last_order: return "ORD00001"
+    if not last_order:
+        return "O001"
     try:
-        new_num = int(last_order.order_id[3:]) + 1
-        return f"ORD{new_num:05d}"
-    except: return f"ORD{str(uuid.uuid4().int)[:8]}"
+        new_num = int(last_order.order_id[1:]) + 1
+        return f"O{new_num:03d}"
+    except:
+        # Fallback an toàn
+        import uuid
+
+        return f"O{str(uuid.uuid4().int)[:8]}"
+
 
 def create_order(db: Session, order_data: OrderCreate):
     try:
-        user = db.execute(select(User).where(User.user_id == order_data.user_id)).scalar_one_or_none()
-        if not user: raise HTTPException(status_code=404, detail="User không tồn tại")
+        user = db.execute(
+            select(User).where(User.user_id == order_data.user_id)
+        ).scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="User không tồn tại")
 
         subtotal = Decimal(0)
         email_items = []
         order_items = []
-        
+
         for item in order_data.items:
-            book = db.execute(select(Book).where(Book.book_id == item.book_id)).scalar_one_or_none()
+            book = db.execute(
+                select(Book).where(Book.book_id == item.book_id)
+            ).scalar_one_or_none()
             if not book or book.stock_quantity < item.quantity:
-                raise HTTPException(status_code=400, detail=f"Sách {item.book_id} không đủ hàng")
-            
+                raise HTTPException(
+                    status_code=400, detail=f"Sách {item.book_id} không đủ hàng"
+                )
+
             line_total = Decimal(str(book.price)) * item.quantity
             subtotal += line_total
-            order_items.append({'book': book, 'quantity': item.quantity, 'price': book.price})
-            email_items.append({'title': book.title, 'quantity': item.quantity, 'price': float(book.price)})
+            order_items.append(
+                {"book": book, "quantity": item.quantity, "price": book.price}
+            )
+            email_items.append(
+                {
+                    "title": book.title,
+                    "quantity": item.quantity,
+                    "price": float(book.price),
+                }
+            )
 
-        shipping_fee = Decimal('30000')
+        shipping_fee = Decimal("30000")
         final_total = subtotal + shipping_fee
         discount_id = None
-        
+
         if order_data.voucher_code:
-            discount = db.execute(select(Discount).where(Discount.voucher_code == order_data.voucher_code)).scalar_one_or_none()
+            discount = db.execute(
+                select(Discount).where(Discount.voucher_code == order_data.voucher_code)
+            ).scalar_one_or_none()
             if discount and discount.expiry_date >= datetime.utcnow():
-                final_total -= subtotal * (Decimal(str(discount.discount_percentage)) / 100)
+                final_total -= subtotal * (
+                    Decimal(str(discount.discount_percentage)) / 100
+                )
                 discount_id = discount.discount_id
 
-        # CHANGED: Trạng thái mặc định là 'processing' (Chờ xử lý)
-        status_rec = db.execute(select(OrderStatus).where(OrderStatus.status_name == 'processing')).scalar_one()
+        # Determine initial status based on payment method
+        # PM001 (COD) -> 'processing' (standard flow)
+        # PM002 (Stripe) -> 'pending_payment' (temporary status) OR 'processing' but we handle email later
+
+        # Ideally, add 'pending_payment' to your order_status table in SQL.
+        # If you can't change DB schema, use 'processing' but skip email for now.
+        initial_status_name = "processing"
+        status_rec = db.execute(
+            select(OrderStatus).where(OrderStatus.status_name == initial_status_name)
+        ).scalar_one()
         new_id = generate_order_id(db)
-        
+
         new_order = Order(
-            order_id=new_id, user_id=order_data.user_id, total_amount=final_total,
-            shipping_address=order_data.shipping_address, payment_method_id=order_data.payment_method_id,
-            status_id=status_rec.status_id, created_at=datetime.utcnow()
+            order_id=new_id,
+            user_id=order_data.user_id,
+            total_amount=final_total,
+            shipping_address=order_data.shipping_address,
+            payment_method_id=order_data.payment_method_id,
+            status_id=status_rec.status_id,
+            created_at=datetime.utcnow(),
         )
-        db.add(new_order); db.flush()
+        db.add(new_order)
+        db.flush()
 
         for it in order_items:
-            db.add(OrderDetail(order_id=new_id, book_id=it['book'].book_id, quantity=it['quantity'], unit_price=it['price']))
-            it['book'].stock_quantity -= it['quantity']
-            it['book'].sold_quantity += it['quantity']
+            db.add(
+                OrderDetail(
+                    order_id=new_id,
+                    book_id=it["book"].book_id,
+                    quantity=it["quantity"],
+                    unit_price=it["price"],
+                )
+            )
+            it["book"].stock_quantity -= it["quantity"]
+            it["book"].sold_quantity += it["quantity"]
 
         if discount_id:
             db.add(DiscountApplication(order_id=new_id, discount_id=discount_id))
 
-        db.commit(); db.refresh(new_order)
+        db.commit()
+        db.refresh(new_order)
 
-        try:
-            email_payload = {
-                'items': email_items, 'subtotal': float(subtotal), 'total_amount': float(final_total),
-                'shipping_address': order_data.shipping_address, 'payment_method_id': order_data.payment_method_id
-            }
-            send_order_confirmation_email(user.email, user.full_name, new_id, email_payload)
-        except Exception as e: logger.error(f"Lỗi gửi mail: {e}")
+        # === PAYMENT LOGIC ===
+        payment_info = {"is_stripe": False, "payment_url": None}  # Giá trị mặc định
 
-        return new_order
+        if order_data.payment_method_id == "PM002":  # Stripe Payment
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    payment_method_types=["card"],
+                    line_items=[
+                        {
+                            "price_data": {
+                                "currency": "vnd",
+                                "product_data": {
+                                    "name": item["book"].title,
+                                    "images": (
+                                        [item["book"].cover_image_url]
+                                        if item["book"].cover_image_url
+                                        else []
+                                    ),
+                                },
+                                "unit_amount": int(item["price"]),
+                            },
+                            "quantity": item["quantity"],
+                        }
+                        for item in order_items
+                    ]
+                    + (
+                        [
+                            {
+                                "price_data": {
+                                    "currency": "vnd",
+                                    "product_data": {"name": "Phí vận chuyển"},
+                                    "unit_amount": int(shipping_fee),
+                                },
+                                "quantity": 1,
+                            }
+                        ]
+                    ),
+                    mode="payment",
+                    success_url=f"{FRONTEND_URL}/payment/success?order_id={new_id}",
+                    cancel_url=f"{FRONTEND_URL}/payment/cancel?order_id={new_id}",
+                    metadata={
+                        "order_id": new_id,
+                        "user_email": user.email,
+                        "user_name": user.full_name,
+                    },
+                )
+
+                # Cập nhật thông tin thanh toán để trả về
+                payment_info = {
+                    "payment_url": checkout_session.url,
+                    "is_stripe": True,
+                }
+
+            except Exception as e:
+                db.rollback()
+                raise HTTPException(status_code=500, detail=f"Stripe Error: {str(e)}")
+
+        else:  # PM001 (COD)
+            try:
+                email_payload = {
+                    "items": email_items,
+                    "subtotal": float(subtotal),
+                    "total_amount": float(final_total),
+                    "shipping_address": order_data.shipping_address,
+                    "payment_method_id": order_data.payment_method_id,
+                }
+                send_order_confirmation_email(
+                    user.email, user.full_name, new_id, email_payload
+                )
+            except Exception as e:
+                logger.error(f"Lỗi gửi mail: {e}")
+
+            # payment_info giữ nguyên mặc định là is_stripe = False
+
+        # QUAN TRỌNG: Trả về cả Order Object và Payment Info
+        return new_order, payment_info
+
     except Exception as e:
-        db.rollback(); raise e
+        db.rollback()
+        raise e
 
 
 def get_user_orders(db: Session, user_id: str):
     """Lấy danh sách đơn hàng của user"""
-    stmt = select(Order).where(Order.user_id == user_id).order_by(Order.created_at.desc())
+    stmt = (
+        select(Order).where(Order.user_id == user_id).order_by(Order.created_at.desc())
+    )
     result = db.execute(stmt)
     return result.scalars().all()
 
@@ -104,10 +232,10 @@ def get_order_by_id(db: Session, order_id: str):
     stmt = select(Order).where(Order.order_id == order_id)
     result = db.execute(stmt)
     order = result.scalar_one_or_none()
-    
+
     if not order:
         raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
-    
+
     return order
 
 
@@ -116,47 +244,44 @@ def cancel_order(db: Session, order_id: str, user_id: str):
     Hủy đơn hàng - CHỈ cho phép khi đơn đang ở trạng thái 'processing' (Chờ xử lý)
     """
     order = get_order_by_id(db, order_id)
-    
+
     # Check permission
     if order.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền hủy đơn hàng này")
-    
-    # CHANGED: Chỉ cho phép hủy khi đang "Chờ xử lý"
-    if order.status.status_name != 'processing':
         raise HTTPException(
-            status_code=400, 
-            detail="Chỉ có thể hủy đơn hàng đang chờ xử lý"
+            status_code=403, detail="Bạn không có quyền hủy đơn hàng này"
         )
-    
+
+    # CHANGED: Chỉ cho phép hủy khi đang "Chờ xử lý"
+    if order.status.status_name != "processing":
+        raise HTTPException(
+            status_code=400, detail="Chỉ có thể hủy đơn hàng đang chờ xử lý"
+        )
+
     # Update status to cancelled
     cancelled_status = db.execute(
-        select(OrderStatus).where(OrderStatus.status_name == 'cancelled')
+        select(OrderStatus).where(OrderStatus.status_name == "cancelled")
     ).scalar_one()
-    
+
     order.status_id = cancelled_status.status_id
-    
+
     # Restore stock
     for detail in order.order_details:
         detail.book.stock_quantity += detail.quantity
         detail.book.sold_quantity -= detail.quantity
-    
+
     db.commit()
     db.refresh(order)
-    
+
     # Send notification email
     user = order.user
     if user:
         try:
             send_order_status_update_email(
-                user.email, 
-                user.full_name, 
-                order_id, 
-                'processing', 
-                'cancelled'
+                user.email, user.full_name, order_id, "processing", "cancelled"
             )
         except Exception as e:
             logger.error(f"Lỗi gửi mail hủy đơn: {e}")
-    
+
     return order
 
 
@@ -166,49 +291,51 @@ def update_order_status(db: Session, order_id: str, new_status: str):
     Flow: processing -> confirmed -> shipping -> completed
     """
     order = get_order_by_id(db, order_id)
-    
+
     # Validate status transitions
     current_status = order.status.status_name if order.status else None
-    
+
     # CHANGED: Logic chuyển trạng thái mới
     valid_transitions = {
-        'processing': ['confirmed', 'cancelled'],  # Chờ xử lý -> Đang xử lý hoặc Hủy
-        'confirmed': ['shipping'],                  # Đang xử lý -> Đang giao
-        'shipping': ['completed'],                  # Đang giao -> Đã giao (do user xác nhận)
-        'completed': [],                            # Đã giao -> không chuyển được
-        'cancelled': []                             # Đã hủy -> không chuyển được
+        "processing": ["confirmed", "cancelled"],  # Chờ xử lý -> Đang xử lý hoặc Hủy
+        "confirmed": ["shipping"],  # Đang xử lý -> Đang giao
+        "shipping": ["completed"],  # Đang giao -> Đã giao (do user xác nhận)
+        "completed": [],  # Đã giao -> không chuyển được
+        "cancelled": [],  # Đã hủy -> không chuyển được
     }
-    
+
     if current_status not in valid_transitions:
         raise HTTPException(status_code=400, detail=f"Trạng thái hiện tại không hợp lệ")
-    
+
     if new_status not in valid_transitions[current_status]:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Không thể chuyển từ '{current_status}' sang '{new_status}'"
+            status_code=400,
+            detail=f"Không thể chuyển từ '{current_status}' sang '{new_status}'",
         )
-    
+
     status_obj = db.execute(
         select(OrderStatus).where(OrderStatus.status_name == new_status)
     ).scalar_one_or_none()
-    
+
     if not status_obj:
         raise HTTPException(status_code=404, detail="Không tìm thấy trạng thái")
-    
+
     old_status = current_status
     order.status_id = status_obj.status_id
-    
+
     db.commit()
     db.refresh(order)
-    
+
     # Send email notification
     user = order.user
     if user:
         try:
-            send_order_status_update_email(user.email, user.full_name, order_id, old_status, new_status)
+            send_order_status_update_email(
+                user.email, user.full_name, order_id, old_status, new_status
+            )
         except Exception as e:
             logger.error(f"Lỗi gửi mail: {e}")
-    
+
     return order
 
 
@@ -217,26 +344,47 @@ def confirm_delivery(db: Session, order_id: str, user_id: str):
     User xác nhận đã nhận hàng - Chuyển từ 'shipping' -> 'completed'
     """
     order = get_order_by_id(db, order_id)
-    
+
     # Check permission
     if order.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền xác nhận đơn hàng này")
-    
-    # CHANGED: Chỉ cho phép xác nhận khi đang "Đang giao"
-    if order.status.status_name != 'shipping':
         raise HTTPException(
-            status_code=400, 
-            detail="Chỉ có thể xác nhận đơn hàng đang giao"
+            status_code=403, detail="Bạn không có quyền xác nhận đơn hàng này"
         )
-    
+
+    # CHANGED: Chỉ cho phép xác nhận khi đang "Đang giao"
+    if order.status.status_name != "shipping":
+        raise HTTPException(
+            status_code=400, detail="Chỉ có thể xác nhận đơn hàng đang giao"
+        )
+
     # Update to completed
     completed_status = db.execute(
-        select(OrderStatus).where(OrderStatus.status_name == 'completed')
+        select(OrderStatus).where(OrderStatus.status_name == "completed")
     ).scalar_one()
-    
+
     order.status_id = completed_status.status_id
-    
+
     db.commit()
     db.refresh(order)
-    
+
     return order
+
+
+def delete_order(db: Session, order_id: str):
+    """Xóa hoàn toàn đơn hàng khỏi database (Dùng khi thanh toán thất bại)"""
+    order = get_order_by_id(db, order_id)
+
+    # Chỉ cho phép xóa nếu trạng thái là processing (chưa thanh toán xong)
+    if order.status.status_name != "processing":
+        raise HTTPException(
+            status_code=400, detail="Không thể xóa đơn hàng đã được xử lý"
+        )
+
+    # Hoàn lại số lượng tồn kho trước khi xóa
+    for detail in order.order_details:
+        detail.book.stock_quantity += detail.quantity
+        detail.book.sold_quantity -= detail.quantity
+
+    db.delete(order)
+    db.commit()
+    return True

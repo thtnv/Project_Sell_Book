@@ -38,6 +38,8 @@ export interface OrderResponse {
   payment_method_name: string | null;
   created_at: string;
   order_details: OrderDetailResponse[];
+  payment_url?: string; //nưếu thanh toán qua Stripe thì có trường này
+  is_stripe?: boolean; 
 }
 
 export interface UserOrderHistoryResponse {
@@ -64,6 +66,13 @@ export interface OrderStatusUpdateResponse {
   message: string;
   order_id: string;
   new_status: string;
+}
+
+// Thêm interface cho response voucher
+export interface VoucherResponse {
+  voucher_code: string;
+  discount_percentage: number;
+  message: string;
 }
 
 // Helper để lấy token
@@ -103,6 +112,13 @@ export async function createOrder(orderData: OrderCreate): Promise<OrderResponse
           ? responseData.detail 
           : 'Tạo đơn hàng thất bại'
       );
+    }
+
+    // Nếu là thanh toán Stripe, tự động chuyển hướng
+    if (responseData.is_stripe && responseData.payment_url) {
+        window.location.href = responseData.payment_url; // Auto-redirect to Stripe
+        // We return a pending state essentially, as the page will redirect
+        return responseData as OrderResponse; 
     }
 
     return responseData as OrderResponse;
@@ -247,4 +263,35 @@ export async function getAllOrdersAdmin(
   }
 
   return response.json() as Promise<AdminOrderListResponse>;
+}
+
+/**
+ * Xóa đơn hàng (Khi thanh toán thất bại)
+ */
+export async function deleteOrder(orderId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    console.error("Failed to delete order");
+  }
+}
+
+/** * Validate voucher code
+ */
+export async function validateVoucher(code: string): Promise<VoucherResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/orders/validate-voucher`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ voucher_code: code }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Mã giảm giá không hợp lệ');
+  }
+
+  return response.json();
 }

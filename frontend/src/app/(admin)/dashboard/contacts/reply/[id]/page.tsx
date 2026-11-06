@@ -177,8 +177,12 @@ export default function AdminReplyContactPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-linear-to-br from-[#4FD1C5] to-[#38B2AC] text-[#1A202C] font-black py-3.5 rounded-xl flex items-center justify-center gap-2 uppercase tracking-widest hover:brightness-110 hover:-translate-y-0.5 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
-          >
+            className="w-full bg-linear-to-br from-[#4FD1C5] to-[#38B2AC]
+              text-[#1A202C] font-semibold py-3.5 rounded-xl
+              flex items-center justify-center gap-2 uppercase tracking-wide
+              hover:brightness-110 hover:-translate-y-0.5 transition-all shadow-lg
+              active:scale-95 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+              >
             {submitting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
@@ -199,13 +203,26 @@ export default function AdminReplyContactPage() {
 
 const InfoCard = ({ icon, label, value, subValue }: InfoCardProps) => (
   <div className="bg-[#0F172A]/50 p-4 rounded-xl border border-white/5 flex items-start gap-3 transition-colors hover:border-[#4FD1C5]/20">
+    
     <div className="text-[#4FD1C5] mt-1">{icon}</div>
+    
     <div>
-      <span className="block text-[10px] uppercase font-black text-[#4FD1C5] tracking-widest mb-1">
+      {/* Label */}
+      <span className="block text-[11px] font-medium text-[#4FD1C5] tracking-wide mb-1">
         {label}
       </span>
-      <div className="font-bold text-white text-base">{value}</div>
-      <div className="text-blue-400 text-xs italic truncate">{subValue}</div>
+
+      {/* Value */}
+      <div className="font-semibold text-white text-base leading-snug">
+        {value}
+      </div>
+
+      {/* Sub value */}
+      {subValue && (
+        <div className="text-blue-400 text-xs italic truncate">
+          {subValue}
+        </div>
+      )}
     </div>
   </div>
 );

@@ -8,6 +8,7 @@ export interface RegisterUserData {
   password: string;
   phone?: string;    // Optional in backend
   address?: string;  // Optional in backend
+  otp: string;
 }
 
 // Interface for API response (matches backend RegisterResponseSchema)
@@ -18,6 +19,20 @@ export interface RegisterResponse {
   phone: string | null;
   address: string | null;
   created_at: string | null;
+}
+
+// [THÊM MỚI]: Hàm gửi OTP
+export async function sendRegisterOtp(email: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/users/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Gửi OTP thất bại');
+    }
 }
 
 // Register user function

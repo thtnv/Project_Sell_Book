@@ -16,7 +16,7 @@ import {
   Loader2,
   Calendar,
   Package,
-  Truck,
+  Truck
 } from "lucide-react";
 
 import Header from "@/components/Layout/Header";
@@ -30,7 +30,7 @@ import {
   BookDetail,
   BookList,
 } from "@/api/book";
-import { createOrder, OrderCreate } from "@/api/order";
+import { createOrder, OrderCreate} from "@/api/order";
 
 const getImageUrl = (image: string | null) => {
   if (!image) return "/books/book-default.jpg";
@@ -94,11 +94,11 @@ const BookDetailPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'PM001' | 'PM002'>('PM001');
   const [shippingAddress, setShippingAddress] = useState("");
-  const [couponCode, setCouponCode] = useState("");
+  const [couponCode] = useState("");
   const [imgError, setImgError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState("");
-
+  const [discountPercent] = useState(0); 
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -137,7 +137,7 @@ const BookDetailPage = () => {
       setQuantity(next);
     }
   };
-
+  
   const handleOrderNow = async () => {
     if (!book || book.stock_quantity === 0) return;
 
@@ -222,7 +222,15 @@ const BookDetailPage = () => {
   }
 
   const imageSrc = imgError ? "/books/book-default.jpg" : getImageUrl(book.cover_image_url);
-  const totalPrice = Number(book.price) * quantity;
+  // 1. KHAI BÁO PHÍ VẬN CHUYỂN
+  const SHIPPING_FEE = 30000;
+
+  // ===> TÍNH TOÁN LẠI GIÁ TIỀN <===
+  const subTotal = Number(book.price) * quantity;
+  const discountAmount = subTotal * (discountPercent / 100);
+  
+  // 2. CỘNG THÊM PHÍ VẬN CHUYỂN VÀO TỔNG
+  const totalPrice = subTotal - discountAmount + SHIPPING_FEE;
 
   return (
     <>
@@ -264,7 +272,7 @@ const BookDetailPage = () => {
               </div>
 
               <div className="lg:col-span-7 flex flex-col">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+                <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
                   {book.title}
                 </h1>
 
@@ -406,22 +414,28 @@ const BookDetailPage = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-sm font-bold mb-2 block text-gray-700">
-                        Mã giảm giá (nếu có)
-                      </label>
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Nhập mã giảm giá"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#0F9D58] focus:ring-2 focus:ring-[#0F9D58]/20 outline-none"
-                      />
-                    </div>
+                    {/* Phần tổng tiền cập nhật */}
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <span>Tạm tính:</span>
+                        <span>{subTotal.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                      
+                      {/* 3. THÊM DÒNG HIỂN THỊ PHÍ VẬN CHUYỂN */}
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <span>Phí vận chuyển:</span>
+                        <span>{SHIPPING_FEE.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                      
+                      {discountPercent > 0 && (
+                        <div className="flex justify-between items-center text-sm text-green-600 font-medium">
+                          <span>Giảm giá ({discountPercent}%):</span>
+                          <span>- {discountAmount.toLocaleString('vi-VN')} đ</span>
+                        </div>
+                      )}
 
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 font-medium">Tổng tiền:</span>
+                      <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                        <span className="text-gray-800 font-bold">Tổng thanh toán:</span>
                         <span className="text-2xl font-bold text-[#0F9D58]">
                           {totalPrice.toLocaleString('vi-VN')} đ
                         </span>

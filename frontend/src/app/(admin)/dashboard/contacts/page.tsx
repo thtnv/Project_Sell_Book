@@ -121,6 +121,7 @@ export default function AdminContactManagement() {
                 <th className="px-4 py-4 w-[15%] border-b border-gray-700">Thời gian gửi</th>
                 <th className="px-4 py-4 w-[15%] border-b border-gray-700">Trạng thái</th>
                 <th className="px-4 py-4 w-[10%] border-b border-gray-700">Hành động</th>
+                <th className="px-4 py-4 w-[10%] border-b border-gray-700"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
@@ -168,14 +169,16 @@ export default function AdminContactManagement() {
                             <span className="text-[10px] uppercase tracking-tighter">Hoàn tất</span>
                           </div>
                         )}
-                        <button
+                      </div>
+                    </td>
+                    <td className="px-4 py-5">
+                      <button
                           onClick={() => handleDelete(item.contact_id, item.full_name)}
                           className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all"
                           title="Xóa"
                         >
                           <Trash2 size={16} />
                         </button>
-                      </div>
                     </td>
                   </tr>
                 ))

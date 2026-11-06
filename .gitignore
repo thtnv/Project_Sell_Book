@@ -65,3 +65,11 @@ Desktop.ini
 .idea/
 *.swp
 *.swo
+
+# ==========================================
+# 5. Local Rules & Local Tests (Do Not Push)
+# ==========================================
+.rules/
+rules/
+tests_local/
+.agent/

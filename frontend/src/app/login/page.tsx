@@ -8,6 +8,7 @@ import { loginUser, loginSocial, LoginData } from '@/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleLogin } from '@react-oauth/google'; // Import Google Hook
 import FacebookLogin from '@greatsumini/react-facebook-login'; // Import Facebook Component
+import { RegisterResponse } from '@/api/user';
 
 const LoginPage = () => {
   const router = useRouter();
@@ -31,7 +32,7 @@ const LoginPage = () => {
   };
 
     // Hàm kiểm tra và đặt cờ thông báo
-  const checkAndSetProfileAlert = (user: any) => {
+  const checkAndSetProfileAlert = (user: RegisterResponse) => {
       // Nếu thiếu SĐT hoặc Địa chỉ -> Cần nhắc nhở
       if (!user.phone || !user.address || user.phone.trim() === "" || user.address.trim() === "") {
           localStorage.setItem('showProfileAlert', 'true');
@@ -54,12 +55,17 @@ const LoginPage = () => {
       // Call login API
       const response = await loginUser(formData);
 
-      if (typeof window !== 'undefined') {
+       if (typeof window !== 'undefined') {
         localStorage.setItem('access_token', response.access_token);
-        localStorage.setItem('user_info', JSON.stringify(response.user));
-
-        // Kiểm tra và đặt cờ thông báo nếu cần
-        checkAndSetProfileAlert(response.user);
+        
+        // [FIX LỖI 1]: Đánh dấu user local
+        const userWithProvider = { ...response.user, auth_provider: 'local' };
+        localStorage.setItem('user_info', JSON.stringify(userWithProvider));
+        
+        login(userWithProvider);
+        
+        // User thường không cần hiện modal nhắc nhở ngay lập tức nếu không muốn
+        // checkAndSetProfileAlert(userWithProvider);
       }
       
       // Update auth context
@@ -86,22 +92,21 @@ const LoginPage = () => {
   const handleSocialSubmit = async (provider: 'google' | 'facebook', token: string) => {
       try {
           setIsLoading(true);
-          // 1. Gọi API Backend để lấy Access Token của ứng dụng
           const response = await loginSocial({ provider, token });
-
-          // Lưu token trả về từ Backend vào localStorage để các API khác (như getMyOrders) dùng được
+          
           if (typeof window !== 'undefined') {
             localStorage.setItem('access_token', response.access_token);
-            localStorage.setItem('user_info', JSON.stringify(response.user));
+            
+            // [FIX LỖI 1 & 2]: Đánh dấu user social
+            const userWithProvider = { ...response.user, auth_provider: provider };
+            localStorage.setItem('user_info', JSON.stringify(userWithProvider));
 
-            // Kiểm tra thông tin user social
-            checkAndSetProfileAlert(response.user);
+            login(userWithProvider);
+            
+            // [FIX LỖI 2]: Chỉ đặt cờ showProfileAlert cho user social
+            checkAndSetProfileAlert(userWithProvider);
           }
 
-          // 2. Cập nhật Context
-          login(response.user);
-          
-          // 3. Chuyển trang
           router.push('/');
       } catch (err: unknown) {
           if (err instanceof Error) {
@@ -137,7 +142,7 @@ const LoginPage = () => {
 
       {/* Header Section */}
       <div className="login-header-compact text-center mb-6 z-10 animate-fade-down">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#0F9D58] mb-1 drop-shadow-sm font-quicksand px-4">
+        <h1 className="text-2xl md:text-3xl font-semibold  text-[#0F9D58] mb-1 drop-shadow-sm font-quicksand px-4">
           Chào mừng bạn đến với nhà sách UTE!
         </h1>
         <p className="text-gray-600 font-semibold text-sm">
@@ -160,17 +165,17 @@ const LoginPage = () => {
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           
-          {/* Số điện thoại */}
+          {/* Số điện thoại / Email */}
           <div className="form-group relative">
             <label className="block font-bold text-xs text-slate-600 mb-1.5 ml-1">
-              Số điện thoại
+              Số điện thoại / Email {/*  */}
             </label>
             <input 
-              type="tel" 
-              name="phone"
+              type="text" // Đổi type="tel" thành "text" để nhập được email
+              name="phone" // Giữ nguyên name nếu backend yêu cầu field này, hoặc đổi thành 'username' cho chuẩn
               value={formData.phone}
               onChange={handleChange}
-              placeholder="Nhập SĐT của bạn"
+              placeholder="Nhập SĐT hoặc Email của bạn"
               disabled={isLoading}
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0F9D58] focus:ring-4 focus:ring-[#0F9D58]/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />

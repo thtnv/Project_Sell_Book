@@ -10,6 +10,7 @@ import {
   BookAdmin,
   BookUpdateData 
 } from '@/api/admin/book_admin';
+import { fetchCategoriesAdmin, CategoryAdmin } from '@/api/admin/category_admin';
 
 export default function EditBookPage() {
   const params = useParams();
@@ -19,45 +20,59 @@ export default function EditBookPage() {
   const [book, setBook] = useState<BookAdmin | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  
+  const [categories, setCategories] = useState<CategoryAdmin[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<BookUpdateData>({});
 
+  // Load book and categories
   useEffect(() => {
-    const loadBook = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const data = await fetchBookDetailAdmin(bookId);
-        setBook(data);
+        setCategoriesLoading(true);
+        
+        // Load book and categories in parallel
+        const [bookData, categoriesResponse] = await Promise.all([
+          fetchBookDetailAdmin(bookId),
+          fetchCategoriesAdmin(0, 100)
+        ]);
+        
+        setBook(bookData);
+        setCategories(categoriesResponse.categories);
+        
         // Pre-fill form
         setFormData({
-          title: data.title,
-          author: data.author,
-          publisher: data.publisher || undefined,
-          publication_year: data.publication_year || undefined,
-          category_id: data.category_id,
-          price: Number(data.price),
-          stock_quantity: data.stock_quantity,
-          description: data.description || undefined,
-          cover_image_url: data.cover_image_url || undefined
+          title: bookData.title,
+          author: bookData.author,
+          publisher: bookData.publisher || undefined,
+          publication_year: bookData.publication_year || undefined,
+          category_id: bookData.category_id,
+          price: Number(bookData.price),
+          stock_quantity: bookData.stock_quantity,
+          description: bookData.description || undefined,
+          cover_image_url: bookData.cover_image_url || undefined
         });
+        
         // Set preview
-        if (data.cover_image_url) {
-          const imageUrl = data.cover_image_url.startsWith('http') 
-            ? data.cover_image_url 
-            : `/books/${data.cover_image_url}`;
+        if (bookData.cover_image_url) {
+          const imageUrl = bookData.cover_image_url.startsWith('http') 
+            ? bookData.cover_image_url 
+            : `/books/${bookData.cover_image_url}`; // Dùng đường dẫn tương đối
           setPreview(imageUrl);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi tải dữ liệu");
       } finally {
         setLoading(false);
+        setCategoriesLoading(false);
       }
     };
 
     if (bookId) {
-      loadBook();
+      loadData();
     }
   }, [bookId]);
 
@@ -71,14 +86,13 @@ export default function EditBookPage() {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPreview(reader.result as string);
       reader.readAsDataURL(file);
-      
-      setFormData(prev => ({ ...prev, cover_image_url: file.name }));
     }
   };
 
@@ -88,7 +102,23 @@ export default function EditBookPage() {
     setSubmitting(true);
 
     try {
-      await updateBookAdmin(bookId, formData);
+      const payload = new FormData();
+      // Append các trường nếu có thay đổi hoặc muốn gửi lại
+      if(formData.title) payload.append("title", formData.title);
+      if(formData.author) payload.append("author", formData.author);
+      if(formData.price) payload.append("price", formData.price.toString());
+      if(formData.category_id) payload.append("category_id", formData.category_id);
+      if(formData.stock_quantity !== undefined) payload.append("stock_quantity", formData.stock_quantity.toString());
+      if(formData.publisher) payload.append("publisher", formData.publisher);
+      if(formData.publication_year) payload.append("publication_year", formData.publication_year.toString());
+      if(formData.description) payload.append("description", formData.description);
+
+      // Nếu có chọn ảnh mới thì gửi lên
+      if (selectedFile) {
+        payload.append("file", selectedFile);
+      }
+
+      await updateBookAdmin(bookId, payload);
       alert("Cập nhật sách thành công!");
       router.push('/dashboard/products');
     } catch (err) {
@@ -223,17 +253,26 @@ export default function EditBookPage() {
 
             <div>
               <label className="block text-sm font-bold text-gray-300 mb-2">Thể Loại</label>
-              <select 
-                name="category_id"
-                value={formData.category_id || ""}
-                onChange={handleChange}
-                className="w-full bg-[#2D3748] border border-gray-600 p-3 rounded-lg focus:border-[#4FD1C5] outline-none text-white"
-              >
-                <option value="">-- Chọn thể loại --</option>
-                <option value="CAT001">Công nghệ thông tin</option>
-                <option value="CAT002">Kinh tế</option>
-                <option value="CAT003">Văn học</option>
-              </select>
+              {categoriesLoading ? (
+                <div className="flex items-center justify-center py-3 bg-[#2D3748] rounded-lg border border-gray-600">
+                  <Loader2 className="animate-spin text-[#4FD1C5]" size={20} />
+                  <span className="ml-2 text-gray-400 text-sm">Đang tải...</span>
+                </div>
+              ) : (
+                <select 
+                  name="category_id"
+                  value={formData.category_id || ""}
+                  onChange={handleChange}
+                  className="w-full bg-[#2D3748] border border-gray-600 p-3 rounded-lg focus:border-[#4FD1C5] outline-none text-white"
+                >
+                  <option value="">-- Chọn thể loại --</option>
+                  {categories.map((cat) => (
+                    <option key={cat.category_id} value={cat.category_id}>
+                      {cat.category_name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -262,7 +301,7 @@ export default function EditBookPage() {
             <div className="sm:col-span-2 flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-700">
               <button 
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || categoriesLoading}
                 className="grow bg-[#4FD1C5] hover:bg-[#38B2AC] text-[#1A202C] font-bold py-4 rounded-xl shadow-lg transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (

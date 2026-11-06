@@ -18,16 +18,9 @@ class Order(Base):
         CheckConstraint('total_amount >= 0', name='check_total_amount'),
     )
     
-<<<<<<< HEAD
-    user = relationship("User", back_populates="orders")
-    order_details = relationship("OrderDetail", back_populates="order")
-    discount_applications = relationship("DiscountApplication", back_populates="order")
-    payment_method = relationship("PaymentMethod", back_populates="orders")
-=======
     # Relationships
     user = relationship("User", back_populates="orders")
     status = relationship("OrderStatus", back_populates="orders")
     order_details = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
     discount_applications = relationship("DiscountApplication", back_populates="order", cascade="all, delete-orphan")
     payment_method = relationship("PaymentMethod", back_populates="orders")
->>>>>>> feature/final

@@ -1,162 +1,198 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext'; // ✅ ADD THIS
-import { getNotifications } from '@/api/contact';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { getNotifications } from "@/api/contact";
 
 const Header = () => {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
-  const { itemCount } = useCart(); // ✅ ADD THIS - Lấy số lượng giỏ hàng
+  const { itemCount } = useCart();
+
+  const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
 
+  /* =======================
+     CLIENT MOUNT
+  ======================= */
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    setMounted(true);
   }, []);
 
+  /* =======================
+     SCROLL EFFECT
+  ======================= */
   useEffect(() => {
-    const loadNotificationCount = async () => {
-      if (isAuthenticated) {
-        try {
-          const notifications = await getNotifications();
-          setNotificationCount(notifications.length);
-        } catch (err) {
-          console.error('Error loading notifications:', err);
-          setNotificationCount(0);
-        }
+    const onScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* =======================
+     LOAD NOTIFICATIONS
+  ======================= */
+  useEffect(() => {
+    if (!mounted || !isAuthenticated) return;
+
+    const load = async () => {
+      try {
+        const data = await getNotifications();
+        setNotificationCount(data.length);
+      } catch {
+        setNotificationCount(0);
       }
     };
-    loadNotificationCount();
-    const interval = setInterval(loadNotificationCount, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
 
-  const handleLogout = () => {
-    if (confirm('Bạn có chắc muốn đăng xuất?')) {
-      logout();
-    }
-  };
+    load();
+    const i = setInterval(load, 300000);
+    return () => clearInterval(i);
+  }, [mounted, isAuthenticated]);
 
-  const isActive = (path: string) => 
-    pathname === path 
-      ? "bg-[#0d9488] text-white shadow-md" 
-      : "text-[#1e293b] hover:bg-[#ccfbf1] hover:text-[#0d9488]";
+  /* =======================
+     HELPERS
+  ======================= */
+  const isActive = (path: string) =>
+    pathname === path
+      ? "bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#fb7185] text-white shadow-lg"
+      : "text-slate-700 hover:bg-[#ecfeff] hover:text-[#2dd4bf]";
 
-  const getInitial = () => {
-    if (!user) return '?';
-    if (!user.fullname) return '?';
-    if (typeof user.fullname !== 'string') return '?';
-    if (user.fullname.length === 0) return '?';
-    return user.fullname[0].toUpperCase();
-  };
+  const getInitial = () => user?.fullname?.[0]?.toUpperCase() || "?";
 
-  const getDisplayName = () => {
-    if (!user) return 'User';
-    if (!user.fullname) return 'User';
-    return user.fullname;
-  };
-
-  const getDisplayRole = () => {
-    if (!user) return 'customer';
-    if (!user.role) return 'customer';
-    return user.role;
-  };
-
+  /* =======================
+     RENDER
+  ======================= */
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-2' : 'bg-white py-3'
-    }`}>
-      <div className="container mx-auto px-4 md:px-10">
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${isScrolled
+          ? "bg-white/80 backdrop-blur-xl shadow-[0_16px_50px_-18px_rgba(45,212,191,0.45)] py-2"
+          : "bg-gradient-to-r from-[#ecfeff] via-white to-[#f0fdfa] py-4"
+        }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 lg:px-10">
         <nav className="flex items-center justify-between">
-          
-          <Link href="/" className="flex items-center gap-2 group">
-            <i className="fas fa-book-open text-2xl text-[#0d9488]"></i>
-            <h1 className="text-2xl font-extrabold text-[#0d9488] tracking-tighter font-quicksand m-0 leading-none">
-              NHÀ SÁCH UTE
-            </h1>
+
+          {/* ================= LOGO ================= */}
+          <Link href="/" className="flex items-center gap-4 group">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-[#2dd4bf]/30 blur-xl opacity-0 group-hover:opacity-100 transition" />
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] flex items-center justify-center shadow-lg">
+                <i className="fas fa-book-open text-white text-xl" />
+              </div>
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-[#2dd4bf] via-[#38bdf8] to-[#fb7185] bg-clip-text text-transparent">
+                NHÀ SÁCH UTE
+              </h1>
+              <p className="text-[11px] text-slate-500 tracking-wide">
+                Knowledge • Emotion • Growth
+              </p>
+            </div>
           </Link>
 
-          <div className="hidden xl:flex items-center space-x-1">
-            <Link href="/" className={`px-4 py-2 rounded-full font-semibold transition-all ${isActive('/')}`}>
-              Trang Chủ
-            </Link>
+          {/* ================= MENU ================= */}
+          <div className="hidden xl:flex items-center gap-2 px-3 py-2 rounded-full bg-white/70 backdrop-blur-lg shadow-inner">
+            {[
+              { href: "/", label: "Trang chủ" },
+              { href: "/cart", label: "Giỏ hàng", icon: "fa-shopping-cart" },
+              { href: "/home/contact", label: "Liên hệ" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-5 py-2 rounded-full text-sm font-semibold flex items-center gap-2 transition-all ${isActive(
+                  item.href
+                )}`}
+              >
+                {item.icon && <i className={`fas ${item.icon}`} />}
+                {item.label}
 
-            <Link href="/cart" className={`px-4 py-2 rounded-full font-semibold flex items-center transition-all ${isActive('/cart')}`}>
-              <i className="fas fa-shopping-cart mr-2"></i>
-              Giỏ hàng 
-              {itemCount > 0 && (
-                <span className="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                  {itemCount}
-                </span>
-              )}
-            </Link>
+                {/* CART BADGE (FIX HYDRATION) */}
+                {mounted &&
+                  isAuthenticated &&
+                  item.href === "/cart" &&
+                  itemCount > 0 && (
+                  <span className="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    {itemCount}
+                  </span>
+                  )}
 
-            <Link href="/home/contact" className={`px-4 py-2 rounded-full font-semibold transition-all ${isActive('/home/contact')}`}>
-              Liên hệ
-            </Link>
-
-            {isAuthenticated && (
-              <Link href="/account" className={`px-4 py-2 rounded-full font-semibold transition-all ${isActive('/account')}`}>
-                Tài khoản
               </Link>
-            )}
+            ))}
 
-            {isAuthenticated && getDisplayRole() === 'admin' && (
-              <Link href="/dashboard" className={`px-4 py-2 rounded-full font-semibold transition-all ${isActive('/dashboard')}`}>
-                <i className="fas fa-cog mr-2"></i>
-                Quản trị
+            {mounted && isAuthenticated && (
+              <Link
+                href="/account"
+                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${isActive(
+                  "/account"
+                )}`}
+              >
+                Tài khoản
               </Link>
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
-            {isAuthenticated && user ? (
-              <div className="flex items-center gap-4">
-                <Link href="/home/notification" className="relative group p-2">
-                  <i className="fas fa-bell text-xl text-[#0d9488] group-hover:animate-bounce"></i>
+          {/* ================= RIGHT ================= */}
+          <div className="flex items-center gap-4">
+            {mounted && isAuthenticated ? (
+              <>
+                {/* NOTIFICATION */}
+                <Link href="/home/notification" className="relative group">
+                  <div className="w-10 h-10 rounded-full bg-white/70 backdrop-blur-lg flex items-center justify-center shadow hover:scale-110 transition">
+                    <i className="fas fa-bell text-[#2dd4bf]" />
+                  </div>
+
                   {notificationCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white font-bold">
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow">
                       {notificationCount}
                     </span>
                   )}
                 </Link>
 
-                <div className="hidden md:flex items-center gap-2">
-                  <div className="w-8 h-8 bg-[#0d9488] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {/* USER */}
+                <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-full bg-white/70 backdrop-blur-lg shadow">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2dd4bf] to-[#38bdf8] text-white flex items-center justify-center font-bold">
                     {getInitial()}
                   </div>
-                  <div className="text-left">
-                    <p className="font-bold text-[#0d9488] text-sm font-quicksand leading-none">
-                      {getDisplayName()}
+                  <div>
+                    <p className="text-sm font-bold text-[#2dd4bf] leading-none">
+                      {user?.fullname}
                     </p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {getDisplayRole()}
+                    <p className="text-[11px] text-slate-500 capitalize">
+                      {user?.role || "customer"}
                     </p>
                   </div>
                 </div>
 
-                <button 
-                  onClick={handleLogout}
-                  className="bg-[#ff6f61] hover:bg-[#e55039] text-white px-5 py-2 rounded-full text-sm font-bold shadow-md transition-all hover:-translate-y-0.5"
+                {/* LOGOUT */}
+                <button
+                  onClick={() => confirm("Đăng xuất?") && logout()}
+                  className="bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg transition-all hover:-translate-y-0.5"
                 >
                   Đăng xuất
                 </button>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="text-[#0d9488] font-bold border-2 border-[#0d9488] px-5 py-1.5 rounded-full hover:bg-[#0d9488] hover:text-white transition-all text-sm">
-                  Đăng nhập
-                </Link>
-                <Link href="/register" className="bg-[#ff6f61] text-white font-bold px-5 py-2 rounded-full shadow-md hover:bg-[#e55039] transition-all text-sm">
-                  Đăng ký
-                </Link>
-              </div>
+              mounted && (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="px-6 py-2 rounded-full border-2 border-[#2dd4bf] text-[#2dd4bf] font-bold hover:bg-[#2dd4bf] hover:text-white transition-all"
+                  >
+                    Đăng nhập
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white font-bold shadow-lg hover:opacity-90 transition"
+                  >
+                    Đăng ký
+                  </Link>
+                </div>
+              )
             )}
           </div>
         </nav>

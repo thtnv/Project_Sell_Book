@@ -11,7 +11,6 @@ export default function CreateCategoryPage() {
   const [error, setError] = useState("");
   
   const [formData, setFormData] = useState<CategoryCreateData>({
-    category_id: "",
     category_name: ""
   });
 
@@ -29,7 +28,7 @@ export default function CreateCategoryPage() {
     setLoading(true);
 
     try {
-      if (!formData.category_id || !formData.category_name) {
+      if (!formData.category_name) {
         throw new Error("Vui lòng điền đầy đủ thông tin");
       }
 
@@ -65,25 +64,6 @@ export default function CreateCategoryPage() {
           )}
 
           <div className="space-y-6">
-            
-            {/* Mã Thể Loại */}
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0">
-              <label className="md:basis-1/4 text-[#A0AEC0] font-semibold md:text-right md:pr-4">
-                Mã Thể Loại <span className="text-red-500">*</span>
-              </label>
-              <div className="md:basis-3/4">
-                <input
-                  name="category_id"
-                  value={formData.category_id}
-                  onChange={handleChange}
-                  placeholder="Nhập mã (VD: IT, EDU...)"
-                  disabled={loading}
-                  maxLength={10}
-                  className="w-full bg-[#1A202C] border border-white/10 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-[#60A5FA] focus:ring-2 focus:ring-[#60A5FA]/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <p className="text-xs text-gray-500 mt-1">Tối đa 10 ký tự, không dấu</p>
-              </div>
-            </div>
 
             {/* Tên Thể Loại */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0">
