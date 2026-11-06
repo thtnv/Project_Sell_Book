@@ -1,187 +1,150 @@
-# Book Sales Management System
+# 📚 UTE BookStore - Hệ Thống Bán Sách Trực Tuyến & Quản Trị Toàn Diện
 
-Hệ thống quản lý bán sách trực tuyến với đầy đủ chức năng cho Khách hàng (Customer) và Quản trị viên (Admin). 
+> **Dự án Website Thương Mại Điện Tử Bán Sách Full-Stack** được xây dựng với kiến trúc hiện đại, phân quyền người dùng và quản trị viên (Admin), tích hợp thanh toán trực tuyến Stripe và Trợ lý AI tư vấn sách thông minh.
 
-## Tech Stack
-- **Frontend:** Next.js, Tailwind CSS
-- **Backend:** Python (FastAPI)
-- **Database:** MySQL
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![MySQL / TiDB](https://img.shields.io/badge/TiDB_Cloud-MySQL_8.0-4479A1?style=for-the-badge&logo=mysql)](https://tidbcloud.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://project-sell-book-ten.vercel.app/)
+[![Render](https://img.shields.io/badge/Render-Live-46E3B7?style=for-the-badge&logo=render)](https://project-sell-book.onrender.com)
 
-## Hướng dẫn cài đặt
+---
 
-### 1. Cài đặt Database (MySQL)
-1. Mở MySQL/phpMyAdmin, tạo một database mới:
-   ```sql
-   CREATE DATABASE book_management;
-### 2. Cấu hình Backend (FastAPI)
-# Bước 1: Tạo môi trường ảo (Virtual Environment) ( nếu đã có venv thì chuyển sang bước 2 )
-python -m venv venv 
+## 🌐 Trải Nghiệm Trực Tiếp (Live Demo & API Docs)
 
-# Bước 2: Kích hoạt môi trường ảo
-# Trên Windows:
+| Thành phần | Đường dẫn (Live URL) | Mô tả |
+| :--- | :--- | :--- |
+| **Giao diện người dùng (Frontend)** | 🚀 **[https://project-sell-book-ten.vercel.app/](https://project-sell-book-ten.vercel.app/)** | Triển khai trên **Vercel** (Next.js 16) |
+| **Máy chủ API (Backend)** | ⚡ **[https://project-sell-book.onrender.com](https://project-sell-book.onrender.com)** | Triển khai trên **Render** (FastAPI) |
+| **Tài liệu API tương tác (Swagger UI)** | 📖 **[https://project-sell-book.onrender.com/docs](https://project-sell-book.onrender.com/docs)** | Trực quan hóa 60+ API endpoints |
+| **Cơ sở dữ liệu (Cloud Database)** | ☁️ **TiDB Cloud Serverless** | Cụm MySQL 8.0 bảo mật SSL/TLS (Singapore) |
+
+---
+
+## 🔑 Tài Khoản Trải Nghiệm (Demo Credentials)
+
+Hệ thống hỗ trợ đăng nhập bằng Số điện thoại (chuẩn SMS/OTP) hoặc Email:
+
+| Vai trò | Số điện thoại | Email | Mật khẩu | Quyền hạn |
+| :--- | :--- | :--- | :--- | :--- |
+| **Quản trị viên (Admin)** | `0111222333` | `admin@bookshop.com` | `123456` | Toàn quyền quản trị Dashboard, sách, danh mục, đơn hàng, khách hàng, doanh thu |
+| **Khách hàng (Customer)** | `0123456789` | `john.doe@email.com` | `123456` | Tìm kiếm, xem sách, đánh giá, giỏ hàng, đặt hàng, chat AI |
+
+---
+
+## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
+
+### 1. Frontend
+- **Framework:** Next.js 16 (App Router, Turbopack, Server & Client Components)
+- **UI & Styling:** Tailwind CSS, Lucide React Icons
+- **Hiệu ứng & Trực quan:** Framer Motion, Swiper.js, Chart.js / React-ChartJS-2
+- **Form & Validation:** React Hook Form, Yup resolver
+- **Xác thực:** Google OAuth 2.0, Facebook Login SDK, JWT Token lưu trữ client
+
+### 2. Backend & Microservices
+- **Framework:** FastAPI (Python 3.11)
+- **ORM & Database Driver:** SQLAlchemy 2.0, PyMySQL (hỗ trợ SSL/TLS native)
+- **Xác thực & Bảo mật:** JWT (Python-Jose), Bcrypt password hashing, CORS Middleware
+- **Tích hợp bên thứ ba:**
+  - **Stripe API:** Xử lý cổng thanh toán quốc tế thẻ tín dụng / Webhook
+  - **Google Gemini AI API:** Chatbot tư vấn gợi ý sách ngữ cảnh tự nhiên
+  - **SMTP Gmail:** Gửi email xác nhận đơn hàng tự động
+
+### 3. Cơ sở dữ liệu & Triển khai
+- **Database:** TiDB Cloud Serverless (MySQL 8.0 tương thích 100%)
+- **CI/CD & Hosting:** Vercel (Frontend), Render (Backend)
+- **Containerization:** Docker, Dockerfile multi-stage, Docker Compose
+
+---
+
+## ✨ Tính Năng Nổi Bật
+
+- [x] **Tìm kiếm & Bộ lọc nâng cao:** Tìm kiếm theo tên sách, tác giả, lọc theo danh mục, mức giá và trạng thái còn hàng.
+- [x] **Giỏ hàng & Đặt hàng:** Tính toán tổng tiền theo thời gian thực, áp dụng mã giảm giá (voucher), lưu giỏ hàng linh hoạt.
+- [x] **Cổng thanh toán Stripe:** Hỗ trợ thanh toán bảo mật với quy trình kiểm tra trạng thái đơn hàng và trang thành công/thất bại có Suspense fallback.
+- [x] **Trợ lý AI tư vấn sách:** Chat widget tích hợp Gemini AI hiểu ngữ cảnh nội dung sách và sở thích độc giả.
+- [x] **Đánh giá & Bình luận:** Độc giả gửi nhận xét, xếp hạng sao (1 - 5 sao) cho từng cuốn sách.
+- [x] **Hệ thống Quản trị (Admin Dashboard):**
+  - Biểu đồ thống kê doanh thu theo tháng, trạng thái đơn hàng (Chart.js).
+  - Quản lý kho sách (thêm mới với Form upload ảnh, sửa giá, cập nhật tồn kho).
+  - Quản lý danh mục thể loại và tài khoản người dùng.
+  - Xử lý phản hồi liên hệ khách hàng và cập nhật tiến trình đơn hàng.
+
+---
+
+## 🌿 Quy Trình Phân Chia Nhánh (Git Workflow 3 Nhánh)
+
+Dự án áp dụng mô hình Git branching tiêu chuẩn công nghiệp:
+- `main`: Nhánh ổn định cao nhất, dùng triển khai Cloud và nộp sản phẩm. Tuyệt đối không commit trực tiếp.
+- `dev`: Nhánh tích hợp chính. Nhận các tính năng sau khi kiểm thử và tiến hành test hồi quy.
+- `feature/*`: Nhánh phát triển tính năng riêng biệt (ví dụ: `feature/login`, `feature/payment-stripe`), sau khi hoàn thành sẽ merge vào `dev`.
+
+---
+
+## 💻 Hướng Dẫn Cài Đặt Cục Bộ (Local Development)
+
+### Cách 1: Sử dụng Docker Compose (Khuyên dùng - 1 lệnh duy nhất)
+
+```bash
+# Clone dự án
+git clone https://github.com/thtnv/Project_Sell_Book.git
+cd Project_Sell_Book
+
+# Khởi chạy toàn bộ hệ thống (MySQL + Backend + Frontend)
+docker compose up --build
+```
+- Frontend: `http://localhost:3000`
+- Backend API Docs: `http://localhost:8000/docs`
+
+---
+
+### Cách 2: Chạy Thủ Công
+
+#### 1. Cấu hình Backend (FastAPI)
+```bash
+cd backend
+
+# Tạo và kích hoạt môi trường ảo
+python -m venv venv
+# Windows:
 .\venv\Scripts\Activate.ps1
-# Trên macOS/Linux:
+# macOS/Linux:
 source venv/bin/activate
 
-# Bước 3: Cài đặt thư viện
+# Cài đặt dependencies
 pip install -r requirements.txt
 
-# Bước 4: Tạo file .env và cấu hình Database URL (Dựa theo file .env.example)
+# Tạo file .env dựa trên .env.example
+cp .env.example .env
 
-# Bước 5: Khởi chạy server
-uvicorn app.main:app --reload
+# Khởi chạy server
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-## Mỗi lần cài đặt thư viện mới ( pip install ... ) thì thêm bước chạy lệnh pip freeze > requirements.txt để cập nhập thư viện trong file requirement.txt
+#### 2. Cấu hình Frontend (Next.js)
+```bash
+cd frontend
 
-### 3. Cấu hình Frontend (Next.js)
-# Cài đặt các dependencies
+# Cài đặt thư viện
 npm install
 
-# Khởi chạy giao diện
+# Tạo file .env.local dựa trên .env.example
+# Khởi chạy ứng dụng
 npm run dev
-
-## Database (MySQL Schema)
-```sql
-DROP DATABASE IF EXISTS book_shop;
-CREATE DATABASE book_shop;
-USE book_shop;
-
--- ============================================
--- CREATE TABLES
--- ============================================
-
--- 1. Categories
-CREATE TABLE categories (
-    category_id VARCHAR(10) PRIMARY KEY,
-    category_name VARCHAR(50) UNIQUE NOT NULL
-);
-
--- 2. Users
-CREATE TABLE users (
-    user_id VARCHAR(10) PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(128) NOT NULL,
-    phone VARCHAR(15),
-    address VARCHAR(255),
-    role VARCHAR(20) DEFAULT 'customer',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. Books
-CREATE TABLE books (
-    book_id VARCHAR(10) PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    author VARCHAR(100) NOT NULL,
-    publisher VARCHAR(100),
-    publication_year INT,
-    category_id VARCHAR(10),
-    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
-    stock_quantity INT DEFAULT 0 CHECK (stock_quantity >= 0),
-    sold_quantity INT DEFAULT 0 CHECK (sold_quantity >= 0),
-    description TEXT,
-    cover_image_url VARCHAR(255),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
-    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
-);
-
--- 4. Payment Methods
-CREATE TABLE payment_methods (
-    payment_method_id VARCHAR(10) PRIMARY KEY,
-    method_name VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    status VARCHAR(20) DEFAULT 'active',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- 5. Order Status
-CREATE TABLE order_status (
-    status_id VARCHAR(10) PRIMARY KEY,
-    status_name VARCHAR(50) UNIQUE NOT NULL
-);
-
--- 6. Orders
-CREATE TABLE orders (
-    order_id VARCHAR(10) PRIMARY KEY,
-    user_id VARCHAR(10),
-    total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0),
-    -- Thay order_status(String) bằng status_id(FK)
-    status_id VARCHAR(10), 
-    shipping_address VARCHAR(255),
-    payment_method_id VARCHAR(10),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (payment_method_id) REFERENCES payment_methods(payment_method_id) ON DELETE SET NULL,
-    FOREIGN KEY (status_id) REFERENCES order_status(status_id) ON DELETE SET NULL
-);
-
--- 7. Order Details
-CREATE TABLE order_details (
-    detail_id INT PRIMARY KEY AUTO_INCREMENT,
-    order_id VARCHAR(10),
-    book_id VARCHAR(10),
-    quantity INT NOT NULL CHECK (quantity > 0),
-    unit_price DECIMAL(10,2) NOT NULL CHECK (unit_price >= 0),
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
-);
-
--- 8. Reviews
-CREATE TABLE reviews (
-    review_id INT PRIMARY KEY AUTO_INCREMENT,
-    book_id VARCHAR(10),
-    user_id VARCHAR(10),
-    rating INT CHECK (rating BETWEEN 1 AND 5),
-    comment TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (book_id, user_id),
-    FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
--- 9. Favorites
-CREATE TABLE favorites (
-    favorite_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id VARCHAR(10),
-    book_id VARCHAR(10),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (user_id, book_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
-);
-
--- 10. Discounts
-CREATE TABLE discounts (
-    discount_id VARCHAR(10) PRIMARY KEY,
-    voucher_code VARCHAR(20) UNIQUE NOT NULL,
-    discount_percentage DECIMAL(5,2) CHECK (discount_percentage BETWEEN 1 AND 100),
-    expiry_date DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- 11. Discount Applications
-CREATE TABLE discount_applications (
-    application_id INT PRIMARY KEY AUTO_INCREMENT,
-    order_id VARCHAR(10),
-    discount_id VARCHAR(10),
-    UNIQUE (order_id, discount_id),
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    FOREIGN KEY (discount_id) REFERENCES discounts(discount_id)
-);
-
--- 12. Contacts
-CREATE TABLE contacts (
-    contact_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id VARCHAR(10) NULL,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) NOT NULL,
-    subject VARCHAR(200) NOT NULL,
-    message TEXT NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    admin_response TEXT NULL,
-    sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    responded_at DATETIME NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
-);
 ```
+
+---
+
+## 🗄️ Cấu Trúc Database (Schema)
+
+Toàn bộ script khởi tạo 12 bảng và 20 cuốn sách mẫu cùng dữ liệu được lưu tại [`database/init_database.sql`](./database/init_database.sql):
+- `categories`: Danh mục sách
+- `users`: Thông tin người dùng & phân quyền (`admin`, `customer`)
+- `books`: Thông tin sách, giá, tồn kho, ảnh bìa
+- `payment_methods`: Phương thức thanh toán (COD, Stripe, Momo, v.v.)
+- `order_status`: Trạng thái đơn (Chờ xử lý, Đang giao, Đã giao, Hủy)
+- `orders` & `order_details`: Đơn hàng và chi tiết sản phẩm
+- `reviews`: Đánh giá xếp hạng sao và bình luận
+- `favorites`: Danh sách sách yêu thích
+- `discounts` & `discount_applications`: Mã giảm giá khuyến mãi
+- `contacts`: Hộp thư liên hệ và phản hồi từ quản trị viên
