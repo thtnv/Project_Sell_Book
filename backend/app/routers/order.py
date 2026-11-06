@@ -191,7 +191,7 @@ async def get_order_detail(
         )
 
         result = db.execute(stmt)
-        order = result.scalar_one_or_none()
+        order = result.unique().scalar_one_or_none()
 
         if not order:
             raise HTTPException(
@@ -208,7 +208,7 @@ async def get_order_detail(
         return {
             "order_id": order.order_id,
             "user_id": order.user_id,
-            "user_name": order.user.fullname if order.user else order.user_id,
+            "user_name": order.user.full_name if order.user else order.user_id,
             "user_phone": order.user.phone if order.user else None,
             "user_email": order.user.email if order.user else None,
             "total_amount": float(order.total_amount),
