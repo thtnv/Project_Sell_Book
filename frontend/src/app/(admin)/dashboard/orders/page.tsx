@@ -135,18 +135,18 @@ const getStatusBadge = (status: string) => {
   }
 
   return (
-    <div className="bg-[#1A202C] min-h-screen p-6 font-inter text-[#E2E8F0]">
-      <h2 className="text-center text-3xl font-extrabold text-[#4FD1C5] mb-10 tracking-widest uppercase italic">
+    <div className="bg-[#1A202C] min-h-screen p-4 md:p-6 font-inter text-[#E2E8F0]">
+      <h2 className="text-center text-2xl md:text-3xl font-extrabold text-[#4FD1C5] mb-6 tracking-widest uppercase italic">
         Quản Lý Đơn Hàng
       </h2>
 
       {/* Filter Section */}
-      <div className="bg-[#2D3748] p-6 rounded-2xl mb-8 shadow-2xl border border-[#4A5568]">
-        <div className="flex flex-wrap gap-4 items-center">
+      <div className="bg-[#2D3748] p-4 md:p-5 rounded-2xl mb-6 shadow-xl border border-[#4A5568]">
+        <div className="flex flex-wrap gap-3 items-center">
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-[#1A202C] border border-[#4A5568] rounded-xl px-5 py-3 outline-none focus:border-[#4FD1C5]"
+            className="bg-[#1A202C] border border-[#4A5568] rounded-xl px-4 py-2 text-sm outline-none focus:border-[#4FD1C5]"
           >
             <option value="">-- Tất cả trạng thái --</option>
             <option value="processing">Chờ xử lý</option>
@@ -158,19 +158,19 @@ const getStatusBadge = (status: string) => {
 
           <button 
             onClick={loadOrders}
-            className="bg-[#4FD1C5] text-[#1A202C] px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#38B2AC] transition-all transform active:scale-95"
+            className="bg-[#4FD1C5] text-[#1A202C] px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:bg-[#38B2AC] transition-all transform active:scale-95"
           >
-            <Filter size={18} /> LỌC
+            <Filter size={16} /> LỌC
           </button>
 
           <button 
             onClick={() => { setStatusFilter(''); setTimeout(loadOrders, 100); }}
-            className="text-[#A0AEC0] hover:text-white flex items-center gap-1 ml-2 transition-colors"
+            className="text-[#A0AEC0] hover:text-white flex items-center gap-1 ml-1 text-sm transition-colors"
           >
-            <RotateCcw size={16} /> Làm mới
+            <RotateCcw size={15} /> Làm mới
           </button>
 
-          <div className="ml-auto text-white font-semibold">
+          <div className="ml-auto text-white font-semibold text-sm">
             Tổng: {total} đơn hàng
           </div>
         </div>
@@ -184,48 +184,46 @@ const getStatusBadge = (status: string) => {
       )}
 
       {/* Table Section */}
-      <div className="bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl w-full">
-        {/* [FIX 2]: Container này tạo thanh cuộn ngang khi bảng quá rộng */}
-        <div className="overflow-x-auto w-full pb-2">
-          {/* [FIX 3]: min-w-full đảm bảo bảng luôn rộng ít nhất 100%, whitespace-nowrap chặn xuống dòng toàn bộ bảng */}
-          <table className="w-full text-sm text-center whitespace-nowrap">
+      <div className="bg-[#2D3748] rounded-2xl border border-[#4A5568] shadow-2xl w-full overflow-hidden">
+        <div className="overflow-x-auto w-full pb-1">
+          <table className="w-full text-xs md:text-sm text-center whitespace-nowrap">
             <thead className="bg-[#1A202C] text-[#4FD1C5]">
               <tr>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">STT</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">Mã ĐH</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">Khách Hàng</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">Ngày Tạo</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">Tổng Tiền</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">Trạng Thái</th>
-                <th className="px-6 py-5 font-bold uppercase tracking-wider">Thao tác</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider">STT</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider">Mã ĐH</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider text-left">Khách Hàng</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider">Ngày Tạo</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider">Tổng Tiền</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider">Trạng Thái</th>
+                <th className="px-4 py-3.5 font-bold uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#4A5568]">
               {orders.length > 0 ? (
                 orders.map((order, idx) => (
                   <tr key={order.order_id} className="hover:bg-[#344054] transition-colors group">
-                    <td className="px-6 py-4">{idx + 1}</td>
-                    <td className="px-6 py-4 font-black text-[#4FD1C5]">{order.order_id}</td>
-                    <td className="px-6 py-4 font-medium text-left">{order.user_name}</td>
-                    <td className="px-6 py-4 text-[#A0AEC0]">{new Date(order.created_at).toLocaleString('vi-VN')}</td>
-                    <td className="px-6 py-4 font-bold text-emerald-400">{order.total_amount.toLocaleString('vi-VN')}₫</td>
-                    <td className="px-6 py-4">{getStatusBadge(order.order_status)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-3">
+                    <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
+                    <td className="px-4 py-3 font-black text-[#4FD1C5]">{order.order_id}</td>
+                    <td className="px-4 py-3 font-medium text-left">{order.user_name}</td>
+                    <td className="px-4 py-3 text-[#A0AEC0]">{new Date(order.created_at).toLocaleString('vi-VN')}</td>
+                    <td className="px-4 py-3 font-bold text-emerald-400">{order.total_amount.toLocaleString('vi-VN')}₫</td>
+                    <td className="px-4 py-3">{getStatusBadge(order.order_status)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
                         
-                        {/* Eye icon – FIXED WIDTH */}
-                        <div className="w-10 flex justify-center">
+                        {/* Eye icon */}
+                        <div className="w-8 flex justify-center">
                           <Link
                             href={`/dashboard/orders/${order.order_id}`}
-                            className="bg-blue-500/20 text-blue-400 p-2 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-lg"
-                            title="Chi tiết"
+                            className="bg-blue-500/20 text-blue-400 p-1.5 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-md"
+                            title="Chi tiết đơn hàng"
                           >
-                            <Eye size={16} />
+                            <Eye size={15} />
                           </Link>
                         </div>
 
-                        {/* Action buttons – FLEXIBLE */}
-                        <div className="min-w-[120px] flex justify-center">
+                        {/* Action buttons */}
+                        <div className="min-w-[110px] flex justify-center">
                           {renderActionButtons(order)}
                         </div>
 

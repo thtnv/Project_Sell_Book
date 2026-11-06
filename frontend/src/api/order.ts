@@ -30,6 +30,9 @@ export interface OrderDetailResponse {
 export interface OrderResponse {
   order_id: string;
   user_id: string;
+  user_name?: string;
+  user_phone?: string;
+  user_email?: string;
   total_amount: number;
   order_status: string;
   status_id: string;

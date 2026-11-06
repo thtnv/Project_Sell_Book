@@ -182,6 +182,7 @@ async def get_order_detail(
         stmt = (
             select(Order)
             .options(
+                joinedload(Order.user),
                 joinedload(Order.status),
                 joinedload(Order.payment_method),
                 joinedload(Order.order_details).joinedload(OrderDetail.book),
@@ -207,6 +208,9 @@ async def get_order_detail(
         return {
             "order_id": order.order_id,
             "user_id": order.user_id,
+            "user_name": order.user.fullname if order.user else order.user_id,
+            "user_phone": order.user.phone if order.user else None,
+            "user_email": order.user.email if order.user else None,
             "total_amount": float(order.total_amount),
             "status_id": order.status_id,
             "order_status": order.status.status_name if order.status else "unknown",
