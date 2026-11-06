@@ -18,10 +18,16 @@ from app.models import (
     OrderStatus,
 )
 
-# Tạo Engine kết nối hỗ trợ cả MySQL và SQLite
+# Tạo Engine kết nối hỗ trợ cả MySQL (Local & Cloud SSL) và SQLite
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+elif not any(local in settings.DATABASE_URL.lower() for local in ["localhost", "127.0.0.1", "@db:", "@mysql:"]):
+    # Tự động kích hoạt SSL/TLS cho Cloud Database (TiDB Cloud, Aiven, AWS RDS...)
+    connect_args = {
+        "ssl_verify_cert": True,
+        "ssl_verify_identity": True,
+    }
 
 engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
 
