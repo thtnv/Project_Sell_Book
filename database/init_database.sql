@@ -24,7 +24,7 @@ CREATE TABLE `categories` (
   `category_name` varchar(50) NOT NULL,
   PRIMARY KEY (`category_id`),
   UNIQUE KEY `category_name` (`category_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 2. users
 CREATE TABLE `users` (
@@ -38,7 +38,7 @@ CREATE TABLE `users` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 3. books
 CREATE TABLE `books` (
@@ -57,8 +57,11 @@ CREATE TABLE `books` (
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`book_id`),
   KEY `category_id` (`category_id`),
-  CONSTRAINT `books_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  CONSTRAINT `books_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE,
+  CONSTRAINT `books_chk_1` CHECK ((`price` >= 0)),
+  CONSTRAINT `books_chk_2` CHECK ((`stock_quantity` >= 0)),
+  CONSTRAINT `books_chk_3` CHECK ((`sold_quantity` >= 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 4. payment_methods
 CREATE TABLE `payment_methods` (
@@ -69,16 +72,15 @@ CREATE TABLE `payment_methods` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`payment_method_id`),
   UNIQUE KEY `method_name` (`method_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 5. order_status
 CREATE TABLE `order_status` (
   `status_id` varchar(10) NOT NULL,
   `status_name` varchar(50) NOT NULL,
-  `description` text,
   PRIMARY KEY (`status_id`),
   UNIQUE KEY `status_name` (`status_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 6. orders
 CREATE TABLE `orders` (
@@ -91,41 +93,45 @@ CREATE TABLE `orders` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`order_id`),
   KEY `user_id` (`user_id`),
-  KEY `status_id` (`status_id`),
   KEY `payment_method_id` (`payment_method_id`),
+  KEY `status_id` (`status_id`),
   CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`status_id`) REFERENCES `order_status` (`status_id`) ON DELETE SET NULL,
-  CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_methods` (`payment_method_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_methods` (`payment_method_id`) ON DELETE SET NULL,
+  CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`status_id`) REFERENCES `order_status` (`status_id`) ON DELETE SET NULL,
+  CONSTRAINT `orders_chk_1` CHECK ((`total_amount` >= 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 7. order_details
 CREATE TABLE `order_details` (
-  `order_detail_id` int NOT NULL AUTO_INCREMENT,
+  `detail_id` int NOT NULL AUTO_INCREMENT,
   `order_id` varchar(10) DEFAULT NULL,
   `book_id` varchar(10) DEFAULT NULL,
   `quantity` int NOT NULL,
   `unit_price` decimal(10,2) NOT NULL,
-  PRIMARY KEY (`order_detail_id`),
+  PRIMARY KEY (`detail_id`),
   KEY `order_id` (`order_id`),
   KEY `book_id` (`book_id`),
   CONSTRAINT `order_details_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
-  CONSTRAINT `order_details_ibfk_2` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  CONSTRAINT `order_details_ibfk_2` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE,
+  CONSTRAINT `order_details_chk_1` CHECK ((`quantity` > 0)),
+  CONSTRAINT `order_details_chk_2` CHECK ((`unit_price` >= 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 8. reviews
 CREATE TABLE `reviews` (
   `review_id` int NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(10) DEFAULT NULL,
   `book_id` varchar(10) DEFAULT NULL,
+  `user_id` varchar(10) DEFAULT NULL,
   `rating` int DEFAULT NULL,
   `comment` text,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`review_id`),
+  UNIQUE KEY `book_id` (`book_id`,`user_id`),
   KEY `user_id` (`user_id`),
-  KEY `book_id` (`book_id`),
-  CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE,
+  CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `reviews_chk_1` CHECK ((`rating` between 1 and 5))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 9. favorites
 CREATE TABLE `favorites` (
@@ -138,7 +144,7 @@ CREATE TABLE `favorites` (
   KEY `book_id` (`book_id`),
   CONSTRAINT `favorites_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `favorites_ibfk_2` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 10. discounts
 CREATE TABLE `discounts` (
@@ -148,8 +154,9 @@ CREATE TABLE `discounts` (
   `expiry_date` datetime NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`discount_id`),
-  UNIQUE KEY `voucher_code` (`voucher_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `voucher_code` (`voucher_code`),
+  CONSTRAINT `discounts_chk_1` CHECK ((`discount_percentage` between 1 and 100))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 11. discount_applications
 CREATE TABLE `discount_applications` (
@@ -161,7 +168,7 @@ CREATE TABLE `discount_applications` (
   KEY `discount_id` (`discount_id`),
   CONSTRAINT `discount_applications_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
   CONSTRAINT `discount_applications_ibfk_2` FOREIGN KEY (`discount_id`) REFERENCES `discounts` (`discount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 12. contacts
 CREATE TABLE `contacts` (
@@ -178,7 +185,7 @@ CREATE TABLE `contacts` (
   PRIMARY KEY (`contact_id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `contacts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ========================================================
 -- INSERT INITIAL SEED DATA (20 BOOKS, USERS, CATEGORIES...)
