@@ -1,0 +1,28 @@
+services:
+  # Backend FastAPI
+  - type: web
+    name: book-shop-backend
+    env: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: DATABASE_URL
+        fromDatabase:
+          name: book-shop-db
+          property: connectionString
+
+databases:
+  - name: book-shop-db
+    region: singapore
+    plan: free

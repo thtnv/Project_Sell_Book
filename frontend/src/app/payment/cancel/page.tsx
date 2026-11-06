@@ -1,14 +1,13 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { XCircle, Loader2 } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { deleteOrder } from "@/api/order";
 
-export default function PaymentCancelPage() {
+function PaymentCancelContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order_id');
-  const router = useRouter();
   // Dùng ref để tránh gọi API 2 lần trong React Strict Mode
   const hasDeleted = useRef(false);
 
@@ -40,5 +39,17 @@ export default function PaymentCancelPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function PaymentCancelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-red-50">
+        <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+      </div>
+    }>
+      <PaymentCancelContent />
+    </Suspense>
   );
 }
